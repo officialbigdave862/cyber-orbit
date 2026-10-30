@@ -12,15 +12,21 @@ const img=s=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)
 const app=express();app.use(express.json({limit:'4mb'}));app.use(express.static(path.join(__dirname,'public')));
 app.get('/',(q,r)=>{const a=path.join(__dirname,'public','index.html'),b=path.join(__dirname,'index.html');r.sendFile(fs.existsSync(a)?a:b)});
 const srv=http.createServer(app),io=new Server(srv,{maxHttpBufferSize:3e6});
-const pub=u=>({username:u.username,followers:u.followers.length,following:u.following.length});
+const pub=u=>({username:u.username,firstName:u.firstName||'',surname:u.surname||'',followers:u.followers.length,following:u.following.length});
 const blk=(a,b)=>((db.users[a]||{}).blocked||[]).includes(b)||((db.users[b]||{}).blocked||[]).includes(a);
 const tok=u=>jwt.sign({u},SECRET,{expiresIn:'30d'});
 function auth(q,r,n){try{q.u=db.users[jwt.verify((q.headers.authorization||'').slice(7),SECRET).u];if(!q.u)throw 0;n()}catch(e){r.status(401).json({error:'Login required'})}}
 app.post('/api/register',async(q,r)=>{const u=String(q.body.username||'').trim().toLowerCase(),p=String(q.body.password||'');
+ const nm=s=>String(s||'').trim().replace(/\s+/g,' ').slice(0,40),fn=nm(q.body.firstName),sn=nm(q.body.surname),NR=/^[\p{L}][\p{L} '\-]*$/u;
+ if(!NR.test(fn)||!NR.test(sn))return r.status(400).json({error:'Enter your first name and surname (letters only)'});
+ const ds=String(q.body.dob||''),d=new Date(ds+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(ds)||isNaN(d))return r.status(400).json({error:'Enter a valid date of birth'});
+ const now=new Date();let age=now.getUTCFullYear()-d.getUTCFullYear();if(now.getUTCMonth()<d.getUTCMonth()||(now.getUTCMonth()===d.getUTCMonth()&&now.getUTCDate()<d.getUTCDate()))age--;
+ if(age<0||age>120)return r.status(400).json({error:'Enter a valid date of birth'});
+ if(age<13)return r.status(400).json({error:'You must be 13 or older to join Cyber World'});
  if(!/^[a-z0-9_]{3,20}$/.test(u))return r.status(400).json({error:'Username: 3-20 letters, numbers or _'});
  if(p.length<6)return r.status(400).json({error:'Password must be 6+ characters'});
  if(db.users[u])return r.status(400).json({error:'Username already taken'});
- db.users[u]={username:u,hash:await bcrypt.hash(p,10),followers:[],following:[],blocked:[],avatar:''};save();r.json({token:tok(u)})});
+ db.users[u]={username:u,firstName:fn,surname:sn,dob:ds,hash:await bcrypt.hash(p,10),followers:[],following:[],blocked:[],avatar:''};save();r.json({token:tok(u)})});
 app.post('/api/login',async(q,r)=>{const u=db.users[String(q.body.username||'').trim().toLowerCase()];
  if(!u||!await bcrypt.compare(String(q.body.password||''),u.hash))return r.status(400).json({error:'Wrong username or password'});
  r.json({token:tok(u.username)})});
