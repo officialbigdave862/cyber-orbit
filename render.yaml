@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: cyber-world
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
