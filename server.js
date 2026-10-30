@@ -7,29 +7,39 @@ let db={users:{},posts:[],statuses:[],messages:[]};
 try{db=JSON.parse(fs.readFileSync(F))}catch(e){}
 let tm;const save=()=>{clearTimeout(tm);tm=setTimeout(()=>fs.writeFile(F,JSON.stringify(db),()=>{}),500)};
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const aud=s=>/^data:audio\/(webm|ogg|mp4|mpeg|aac|x-m4a|wav)(;codecs=[A-Za-z0-9.,=-]+)?;base64,[A-Za-z0-9+\/=]+$/.test(s)&&s.length<1.5e6?s:'';
 const img=s=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)&&s.length<3e6?s:'';
 const app=express();app.use(express.json({limit:'4mb'}));app.use(express.static(path.join(__dirname,'public')));
 app.get('/',(q,r)=>{const a=path.join(__dirname,'public','index.html'),b=path.join(__dirname,'index.html');r.sendFile(fs.existsSync(a)?a:b)});
-const srv=http.createServer(app),io=new Server(srv,{maxHttpBufferSize:1e6});
+const srv=http.createServer(app),io=new Server(srv,{maxHttpBufferSize:3e6});
 const pub=u=>({username:u.username,followers:u.followers.length,following:u.following.length});
+const blk=(a,b)=>((db.users[a]||{}).blocked||[]).includes(b)||((db.users[b]||{}).blocked||[]).includes(a);
 const tok=u=>jwt.sign({u},SECRET,{expiresIn:'30d'});
 function auth(q,r,n){try{q.u=db.users[jwt.verify((q.headers.authorization||'').slice(7),SECRET).u];if(!q.u)throw 0;n()}catch(e){r.status(401).json({error:'Login required'})}}
 app.post('/api/register',async(q,r)=>{const u=String(q.body.username||'').trim().toLowerCase(),p=String(q.body.password||'');
  if(!/^[a-z0-9_]{3,20}$/.test(u))return r.status(400).json({error:'Username: 3-20 letters, numbers or _'});
  if(p.length<6)return r.status(400).json({error:'Password must be 6+ characters'});
  if(db.users[u])return r.status(400).json({error:'Username already taken'});
- db.users[u]={username:u,hash:await bcrypt.hash(p,10),followers:[],following:[]};save();r.json({token:tok(u)})});
+ db.users[u]={username:u,hash:await bcrypt.hash(p,10),followers:[],following:[],blocked:[],avatar:''};save();r.json({token:tok(u)})});
 app.post('/api/login',async(q,r)=>{const u=db.users[String(q.body.username||'').trim().toLowerCase()];
  if(!u||!await bcrypt.compare(String(q.body.password||''),u.hash))return r.status(400).json({error:'Wrong username or password'});
  r.json({token:tok(u.username)})});
-app.get('/api/me',auth,(q,r)=>r.json(pub(q.u)));
+app.get('/api/me',auth,(q,r)=>r.json({...pub(q.u),followingList:q.u.following,blockedList:q.u.blocked||[]}));
+app.get('/api/avatars',auth,(q,r)=>{const o={};Object.values(db.users).forEach(x=>{if(x.avatar&&!blk(q.u.username,x.username))o[x.username]=x.avatar});r.json(o)});
+app.post('/api/avatar',auth,(q,r)=>{const i=img(String(q.body.image||''));if(!i||i.length>3e5)return r.status(400).json({error:'Use a smaller photo'});q.u.avatar=i;save();r.json({ok:1})});
+app.post('/api/password',auth,async(q,r)=>{const o=String(q.body.old||''),n=String(q.body.new||'');if(!await bcrypt.compare(o,q.u.hash))return r.status(400).json({error:'Current password is wrong'});
+ if(n.length<6)return r.status(400).json({error:'New password must be 6+ characters'});q.u.hash=await bcrypt.hash(n,10);save();r.json({ok:1})});
+app.post('/api/block/:n',auth,(q,r)=>{const o=db.users[q.params.n];if(!o||o===q.u)return r.status(400).json({error:'User not found'});q.u.blocked=q.u.blocked||[];
+ const i=q.u.blocked.indexOf(o.username);if(i<0){q.u.blocked.push(o.username);q.u.following=q.u.following.filter(x=>x!==o.username);q.u.followers=q.u.followers.filter(x=>x!==o.username);
+  o.following=o.following.filter(x=>x!==q.u.username);o.followers=o.followers.filter(x=>x!==q.u.username)}else q.u.blocked.splice(i,1);save();r.json({blocked:i<0})});
+
 app.get('/api/users',auth,(q,r)=>{const s=String(q.query.q||'').toLowerCase();
- r.json(Object.values(db.users).filter(x=>x.username!==q.u.username&&x.username.includes(s)).slice(0,30).map(x=>({...pub(x),followed:q.u.following.includes(x.username)})))});
-app.post('/api/follow/:n',auth,(q,r)=>{const o=db.users[q.params.n];if(!o||o===q.u)return r.status(400).json({error:'Invalid user'});
+ r.json(Object.values(db.users).filter(x=>x.username!==q.u.username&&x.username.includes(s)&&!blk(q.u.username,x.username)).slice(0,30).map(x=>({...pub(x),followed:q.u.following.includes(x.username)})))});
+app.post('/api/follow/:n',auth,(q,r)=>{const o=db.users[q.params.n];if(!o||o===q.u||blk(q.u.username,o.username))return r.status(400).json({error:'Invalid user'});
  const i=q.u.following.indexOf(o.username);
  if(i<0){q.u.following.push(o.username);o.followers.push(q.u.username)}else{q.u.following.splice(i,1);o.followers=o.followers.filter(x=>x!==q.u.username)}
  save();r.json({followed:i<0})});
-app.get('/api/feed',auth,(q,r)=>r.json(db.posts.slice(-100).reverse()));
+app.get('/api/feed',auth,(q,r)=>r.json(db.posts.slice(-100).reverse().filter(p=>!blk(q.u.username,p.user)).map(p=>({...p,comments:p.comments.filter(c=>!blk(q.u.username,c.user))}))));
 app.post('/api/posts',auth,(q,r)=>{const text=String(q.body.text||'').trim().slice(0,500),image=img(String(q.body.image||''));
  if(!text&&!image)return r.status(400).json({error:'Write something or add a photo'});
  db.posts.push({id:id(),user:q.u.username,text,image,time:Date.now(),likes:[],comments:[]});save();r.json({ok:1})});
@@ -37,29 +47,33 @@ app.post('/api/posts/:id/like',auth,(q,r)=>{const p=db.posts.find(x=>x.id===q.pa
  const i=p.likes.indexOf(q.u.username);i<0?p.likes.push(q.u.username):p.likes.splice(i,1);save();r.json({ok:1})});
 app.post('/api/posts/:id/comment',auth,(q,r)=>{const p=db.posts.find(x=>x.id===q.params.id),t=String(q.body.text||'').trim().slice(0,300);
  if(!p||!t)return r.sendStatus(400);p.comments.push({user:q.u.username,text:t,time:Date.now()});save();r.json({ok:1})});
-app.get('/api/statuses',auth,(q,r)=>{const c=Date.now()-864e5;db.statuses=db.statuses.filter(s=>s.time>c);r.json(db.statuses.slice().reverse())});
+app.get('/api/statuses',auth,(q,r)=>{const c=Date.now()-864e5;db.statuses=db.statuses.filter(s=>s.time>c);r.json(db.statuses.slice().reverse().filter(s=>!blk(q.u.username,s.user)))});
 app.post('/api/status',auth,(q,r)=>{const text=String(q.body.text||'').trim().slice(0,200),image=img(String(q.body.image||''));
  if(!text&&!image)return r.sendStatus(400);db.statuses.push({id:id(),user:q.u.username,text,image,time:Date.now()});save();r.json({ok:1})});
 app.get('/api/messages/:n',auth,(q,r)=>{const a=q.u.username,b=q.params.n;r.json(db.messages.filter(m=>(m.from===a&&m.to===b)||(m.from===b&&m.to===a)).slice(-200))});
-app.get('/api/chats',auth,(q,r)=>{const s=new Set();db.messages.forEach(m=>{if(m.from===q.u.username)s.add(m.to);if(m.to===q.u.username)s.add(m.from)});r.json([...s])});
+app.get('/api/chats',auth,(q,r)=>{const s=new Set();db.messages.forEach(m=>{if(m.from===q.u.username)s.add(m.to);if(m.to===q.u.username)s.add(m.from)});r.json([...s].filter(x=>!blk(q.u.username,x)))});
 
-const online={},locs={},lives={};
+const online={},locs={},lives={},liveLikes={};
+const stats=h=>{const n=Math.max(0,((io.sockets.adapter.rooms.get('live:'+h)||{size:1}).size)-1);io.to('live:'+h).emit('live:stats',{host:h,viewers:n,likes:liveLikes[h]||0})};
 const emitTo=(u,ev,d)=>(online[u]||[]).forEach(i=>io.to(i).emit(ev,d));
 function pushLocs(){for(const [u,set] of Object.entries(online)){const me=db.users[u];
- const v=Object.values(locs).filter(l=>l.user===u||me.following.includes(l.user));set.forEach(i=>io.to(i).emit('locs',v))}}
+ const v=Object.values(locs).filter(l=>l.user===u||(me.following.includes(l.user)&&!blk(u,l.user)));set.forEach(i=>io.to(i).emit('locs',v))}}
 io.use((s,n)=>{try{s.user=jwt.verify(s.handshake.auth.token,SECRET).u;if(!db.users[s.user])throw 0;n()}catch(e){n(new Error('auth'))}});
 io.on('connection',s=>{const u=s.user;(online[u]=online[u]||new Set()).add(s.id);
  s.emit('lives',Object.keys(lives));pushLocs();
- s.on('dm',({to,text})=>{text=String(text||'').trim().slice(0,1000);if(!db.users[to]||!text||to===u)return;
-  const m={id:id(),from:u,to,text,time:Date.now()};db.messages.push(m);save();emitTo(to,'dm',m);emitTo(u,'dm',m)});
+ s.on('dm',({to,text,audio})=>{text=String(text||'').trim().slice(0,1000);audio=aud(String(audio||''));if(!db.users[to]||(!text&&!audio)||to===u||blk(u,to))return;
+  const m={id:id(),from:u,to,text,time:Date.now(),...(audio?{audio}:{})};db.messages.push(m);save();emitTo(to,'dm',m);emitTo(u,'dm',m)});
  s.on('loc',l=>{if(isFinite(l.lat)&&isFinite(l.lng)){locs[u]={user:u,lat:+l.lat,lng:+l.lng,time:Date.now()};pushLocs()}});
  s.on('loc:stop',()=>{delete locs[u];pushLocs()});
  s.on('rtc',({to,data})=>emitTo(to,'rtc',{from:u,data}));
- s.on('live:start',()=>{lives[u]=s.id;s.join('live:'+u);io.emit('lives',Object.keys(lives))});
+ s.on('live:start',()=>{lives[u]=s.id;liveLikes[u]=0;s.join('live:'+u);io.emit('lives',Object.keys(lives));stats(u);(db.users[u].followers||[]).forEach(f=>{if(!blk(u,f))emitTo(f,'live:started',u)})});
  s.on('live:stop',()=>{if(lives[u]===s.id){delete lives[u];io.emit('lives',Object.keys(lives));io.emit('live:ended',u)}});
- s.on('live:join',h=>{if(lives[h]){s.join('live:'+h);io.to(lives[h]).emit('live:viewer',{id:s.id,user:u})}});
+ s.on('live:join',h=>{if(lives[h]&&!blk(u,h)){s.join('live:'+h);io.to(lives[h]).emit('live:viewer',{id:s.id,user:u});stats(h)}});
+ s.on('live:leave',h=>{s.leave('live:'+h);stats(h)});
+ s.on('live:like',h=>{if(lives[h]&&s.rooms.has('live:'+h)){liveLikes[h]=(liveLikes[h]||0)+1;io.to('live:'+h).emit('live:like',{user:u});stats(h)}});
  s.on('live:sig',({to,data})=>io.to(to).emit('live:sig',{from:s.id,data}));
  s.on('live:chat',({host,text})=>{text=String(text||'').trim().slice(0,200);if(text&&s.rooms.has('live:'+host))io.to('live:'+host).emit('live:chat',{user:u,text})});
+ s.on('disconnecting',()=>{for(const r of s.rooms)if(r.startsWith('live:')&&r!=='live:'+u)setTimeout(()=>stats(r.slice(5)),50)});
  s.on('disconnect',()=>{online[u].delete(s.id);
   if(!online[u].size){delete online[u];delete locs[u];pushLocs()}
   if(lives[u]===s.id){delete lives[u];io.emit('lives',Object.keys(lives));io.emit('live:ended',u)}});
