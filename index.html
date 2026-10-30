@@ -76,12 +76,24 @@ audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8
 [data-theme=light] .cin button,[data-theme=light] .fb{color:#0095f6}
 [data-theme=light] nav button.mid{background:#fffc00}[data-theme=light] .ring .av{border-color:#fff}[data-theme=light] .ring.add{background:#dbdbdb}
 #sv button,#call button.pink{color:#fff}#sv button{background:none}
+.err{color:#ff6b6b;min-height:18px;margin:6px 0}#auth .pw{position:relative;margin:6px 0}#auth .pw input{margin:0;padding-right:46px}
+#auth .pw button{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;min-height:0;padding:6px 10px}[data-theme=light] #auth .pw button{background:none}
 </style></head><body>
 <div id="earth"></div><div id="authbg"></div><div id="toast"></div>
 <div id="auth"><h1 class="grad">Cyber World</h1><p class="mut">Share moments. Chat. Go live. 🌍</p>
-<input id="u" placeholder="Username" autocapitalize="off"><input id="p" type="password" placeholder="Password (6+ characters)">
-<p id="aerr" style="color:#ff6b6b;min-height:18px"></p>
-<button class="blue" style="width:100%" onclick="authIn('login')">Log in</button><p class="mut">or</p><button class="yel" style="width:100%" onclick="authIn('register')">Create account</button></div>
+<div id="login"><h3 style="margin:10px 0">Log in</h3>
+<input id="u" placeholder="Username" autocapitalize="off" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+<div class="pw"><input id="p" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" onclick="togglePw('p',this)">👁</button></div>
+<p id="aerr" class="err"></p><button class="blue" style="width:100%" onclick="doLogin()">Log in</button>
+<p class="mut">New here?</p><button class="yel" style="width:100%" onclick="showAuth('signup')">Create new account</button></div>
+<div id="signup" hidden><h3 style="margin:10px 0">Create account</h3>
+<input id="fn" placeholder="First name" autocomplete="given-name"><input id="sn" placeholder="Surname" autocomplete="family-name">
+<label class="mut" style="display:block;text-align:left;font-size:12px">Date of birth (private, 13+ only)</label><input id="dob" type="date">
+<input id="su" placeholder="Choose a username" autocapitalize="off" autocomplete="username">
+<div class="pw"><input id="sp" type="password" placeholder="Password (6+ characters)" autocomplete="new-password"><button type="button" onclick="togglePw('sp',this)">👁</button></div>
+<div class="pw"><input id="sp2" type="password" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()"><button type="button" onclick="togglePw('sp2',this)">👁</button></div>
+<p id="serr" class="err"></p><button class="yel" style="width:100%" onclick="doSignup()">Sign up</button>
+<p class="mut">Already have an account?</p><button style="width:100%" onclick="showAuth('login')">Back to log in</button></div></div>
 <div id="app" hidden>
 <header><h2 class="grad">Cyber World</h2><span><button onclick="show('map')">🌍</button><button onclick="show('orbit')">🛰️</button><button onclick="show('settings')" style="display:inline-flex;align-items:center;gap:6px"><span id="hav"></span><small id="who"></small>⚙️</button></span></header>
 <main>
@@ -138,7 +150,7 @@ async function start(){if(!token)return;try{me=await api('me')}catch{localStorag
  sock.on('live:like',()=>heart(liveStream?$('hbox'):$('wbox')));sock.on('live:started',u=>toast('🔴 @'+u+' is live — tap 🔴 to join'));sock.on('locs',drawLocs);sock.on('rtc',onRtc);
  sock.on('live:viewer',onViewer);sock.on('live:sig',onLiveSig);sock.on('live:ended',h=>{if(watching===h)stopWatch()});
  sock.on('live:chat',m=>{const d=document.createElement('div');d.innerHTML='<b>'+esc(m.user)+'</b> '+esc(m.text);$('lchat').appendChild(d);$('lchat').scrollTop=1e9});
- await loadAv();setHdr();show('feed');toast('Welcome, @'+me.username+' 👋')}
+ await loadAv();setHdr();show('feed');toast('Welcome, '+(me.firstName||'@'+me.username)+' 👋')}
 function logout(){localStorage.removeItem('t');location.reload()}
 function show(t){tab=t;document.querySelectorAll('section').forEach(s=>s.hidden=s.id!=='s-'+t);
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0);
@@ -172,7 +184,7 @@ function closeStory(){clearTimeout(sv.t);$('sv').hidden=true}
 function stepStory(d){sv.i=Math.max(0,sv.i+d);showStory()}
 /* PEOPLE */
 async function loadPeople(){const us=await api('users?q='+encodeURIComponent($('q').value));
- $('plist').innerHTML=us.map(u=>`<div class="li" style="cursor:default">${av(u.username,46)}<div style="flex:1"><b>${u.username}</b><br><small>${u.followers} followers</small></div><button class="${u.followed?'':'blue'}" onclick="follow('${u.username}')">${u.followed?'Following':'Follow'}</button><button onclick="openChat('${u.username}')">💬</button><button onclick="askBlock('${u.username}')">🚫</button></div>`).join('')||'<p class=mut style="padding:20px">No other users yet — invite friends!</p>'}
+ $('plist').innerHTML=us.map(u=>`<div class="li" style="cursor:default">${av(u.username,46)}<div style="flex:1"><b>${u.username}</b><br><small>${esc(((u.firstName||'')+' '+(u.surname||'')).trim())} · ${u.followers} followers</small></div><button class="${u.followed?'':'blue'}" onclick="follow('${u.username}')">${u.followed?'Following':'Follow'}</button><button onclick="openChat('${u.username}')">💬</button><button onclick="askBlock('${u.username}')">🚫</button></div>`).join('')||'<p class=mut style="padding:20px">No other users yet — invite friends!</p>'}
 async function follow(n){await api('follow/'+n,'POST');me=await api('me');loadPeople()}
 /* CHAT */
 async function loadChats(){const c=await api('chats');if(chatWith)return openChat(chatWith);$('cbox').hidden=true;$('clist').hidden=false;
@@ -240,7 +252,7 @@ async function loadAv(){try{AV=await api('avatars')}catch(e){}}
 function setHdr(){$('hav').innerHTML=av(me.username,26);$('who').textContent=me.username}
 function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;document.querySelector('meta[name=theme-color]').content=t==='light'?'#ffffff':'#000000';document.querySelectorAll('.thb').forEach(b=>b.classList.toggle('blue',b.dataset.th===t))}
 async function loadSettings(){me=await api('me');setHdr();applyTheme(localStorage.theme||'dark');
- $('sprof').innerHTML=av(me.username,64)+`<div><b>@${me.username}</b><br><small>${me.followers} followers · ${me.following} following</small></div>`;
+ $('sprof').innerHTML=av(me.username,64)+`<div><b>${esc(((me.firstName||'')+' '+(me.surname||'')).trim()||'@'+me.username)}</b><br><small>@${me.username}</small><br><small>${me.followers} followers · ${me.following} following</small></div>`;
  $('blist').innerHTML=me.blockedList.map(u=>`<div class=li style="cursor:default">${av(u,36)}<b style="flex:1">${u}</b><button onclick="blockU('${u}')">Unblock</button></div>`).join('')||'<p class=mut>No blocked accounts</p>'}
 async function setAvatar(i){try{const im=await pickImg(i,200);if(!im)return;await api('avatar','POST',{image:im});await loadAv();toast('Profile picture updated ✅');setHdr();loadSettings()}catch(e){toast(e.message)}}
 async function chPw(){try{await api('password','POST',{old:$('op').value,new:$('np').value});$('op').value=$('np').value='';toast('Password changed 🔒')}catch(e){toast(e.message)}}
@@ -249,6 +261,13 @@ async function blockU(n){try{const r=await api('block/'+n,'POST');me=await api('
  if(tab==='chat'){chatWith=null;loadChats()}else show(tab)}catch(e){toast(e.message)}}
 function heart(b){const h=document.createElement('span');h.className='fh';h.textContent='❤️';h.style.left=(10+Math.random()*70)+'%';b.appendChild(h);setTimeout(()=>h.remove(),1800)}
 function liveLike(){if(watching)sock.emit('live:like',watching)}
+function showAuth(v){$('login').hidden=v!=='login';$('signup').hidden=v!=='signup';$('aerr').textContent=$('serr').textContent=''}
+function togglePw(id,b){const i=$(id);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'}
+async function postAuth(path,body,err){try{const r=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error);token=localStorage.t=j.token;start()}catch(e){$(err).textContent=e.message}}
+function doLogin(){postAuth('login',{username:$('u').value,password:$('p').value},'aerr')}
+function doSignup(){if($('sp').value!==$('sp2').value)return $('serr').textContent='Passwords do not match';
+ postAuth('register',{firstName:$('fn').value,surname:$('sn').value,dob:$('dob').value,username:$('su').value,password:$('sp').value},'serr')}
+$('dob').max=new Date().toISOString().slice(0,10);
 applyTheme(localStorage.theme||'dark');
 let POSTS=[],bg,bgT,rec,chunks=[],recT,recS;
 async function followU(n){await api('follow/'+n,'POST');me=await api('me');loadFeed()}
