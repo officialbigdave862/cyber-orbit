@@ -9,6 +9,7 @@ let tm;const save=()=>{clearTimeout(tm);tm=setTimeout(()=>fs.writeFile(F,JSON.st
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const img=s=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)&&s.length<3e6?s:'';
 const app=express();app.use(express.json({limit:'4mb'}));app.use(express.static(path.join(__dirname,'public')));
+app.get('/',(q,r)=>{const a=path.join(__dirname,'public','index.html'),b=path.join(__dirname,'index.html');r.sendFile(fs.existsSync(a)?a:b)});
 const srv=http.createServer(app),io=new Server(srv,{maxHttpBufferSize:1e6});
 const pub=u=>({username:u.username,followers:u.followers.length,following:u.following.length});
 const tok=u=>jwt.sign({u},SECRET,{expiresIn:'30d'});
