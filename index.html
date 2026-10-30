@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cyber World</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#07070f;--card:#12122a;--neon:#00f0ff;--pink:#ff2bd6;--tx:#e8e8ff;--mut:#8a8ab0}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;padding-bottom:70px}
+h1,h2{margin:0;text-shadow:0 0 12px var(--neon)}h1{color:var(--neon)}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #223;position:sticky;top:0;background:var(--bg);z-index:5}
+main{max-width:640px;margin:auto;padding:12px}
+.card{background:var(--card);border:1px solid #2a2a55;border-radius:12px;padding:12px;margin:10px 0}
+.card img,.card video{max-width:100%;border-radius:8px}
+input,textarea{background:#0b0b1c;color:var(--tx);border:1px solid #33336a;border-radius:8px;padding:9px;width:100%;font:inherit}
+button{background:transparent;color:var(--neon);border:1px solid var(--neon);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit}
+button:hover,nav button.on{background:var(--neon);color:#000}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px;justify-content:space-between}.row input{flex:1}
+.mut,small{color:var(--mut)}.cm{font-size:14px;margin-top:6px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;overflow-x:auto;background:#0d0d20;border-top:1px solid #223;padding:8px;gap:6px;z-index:5}
+nav button{flex:1;white-space:nowrap}
+#auth{max-width:340px;margin:12vh auto;padding:16px;text-align:center}#auth input{margin:6px 0}
+#authbg{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#10104a,#07070f 70%);z-index:-1}
+.m{max-width:80%;padding:8px 11px;border-radius:12px;margin:5px 0;background:#1d1d44;word-break:break-word}.m.me{margin-left:auto;background:#0a4b55}
+#msgs{height:300px;overflow:auto}
+#map,#omap{height:380px;border-radius:12px}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--pink);color:#000;padding:8px 14px;border-radius:20px;z-index:99;display:none}
+#call{position:fixed;inset:0;background:#000d;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+#call video{max-width:90vw;max-height:40vh;background:#111;border-radius:10px}
+.pink{color:var(--pink);border-color:var(--pink)}
+</style></head><body>
+<div id="authbg"></div><div id="toast"></div>
+<div id="auth"><h1>🌐 CYBER WORLD</h1><p class="mut">Connect • Chat • Go Live • Track</p>
+<input id="u" placeholder="username" autocapitalize="off"><input id="p" type="password" placeholder="password (6+ chars)">
+<p id="aerr" style="color:var(--pink);min-height:18px"></p>
+<button onclick="authIn('login')">Login</button> <button class="pink" onclick="authIn('register')">Create account</button></div>
+<div id="app" hidden>
+<header><h2>🌐 Cyber World</h2><span><small id="who"></small> <button onclick="logout()">Logout</button></span></header>
+<main>
+<section id="s-feed"><div class="card"><textarea id="pt" rows="2" placeholder="What's happening?"></textarea>
+<div class="row"><input type="file" id="pi" accept="image/*"><button onclick="doPost()">Post</button></div></div><div id="posts"></div></section>
+<section id="s-people" hidden><input id="q" placeholder="Search people..." oninput="loadPeople()"><div id="plist"></div></section>
+<section id="s-chat" hidden><div id="clist" class="row" style="flex-wrap:wrap;justify-content:flex-start"></div>
+<div id="cbox" class="card" hidden><div class="row"><b id="cname"></b><button onclick="startCall(chatWith)">📹 Video call</button></div><div id="msgs"></div>
+<div class="row"><input id="mt" placeholder="Message..." onkeydown="if(event.key==='Enter')sendDm()"><button onclick="sendDm()">Send</button></div></div></section>
+<section id="s-live" hidden><div class="card"><button class="pink" id="gl" onclick="toggleLive()">🔴 Go Live</button>
+<video id="lv" autoplay muted playsinline hidden style="width:100%;margin-top:8px"></video></div>
+<h3>Live now</h3><div id="lives"></div>
+<div id="wbox" class="card" hidden><div class="row"><b id="wname"></b><button onclick="stopWatch()">Leave</button></div>
+<video id="wv" autoplay playsinline style="width:100%"></video><div id="lchat" style="max-height:140px;overflow:auto"></div>
+<div class="row"><input id="lt" placeholder="Say something..." onkeydown="if(event.key==='Enter')liveChat()"><button onclick="liveChat()">Send</button></div></div></section>
+<section id="s-status" hidden><div class="card"><input id="st" placeholder="Share a status (disappears in 24h)">
+<div class="row"><input type="file" id="si" accept="image/*"><button onclick="postStatus()">Share</button></div></div><div id="slist"></div></section>
+<section id="s-map" hidden><div class="card"><button id="sh" onclick="toggleShare()">📍 Share my location</button>
+<p class="mut">You see yourself and people you follow who are sharing. Location is shared only while you keep it on.</p></div><div id="map"></div></section>
+<section id="s-orbit" hidden><div class="card"><b>🛰️ Live satellite tracker (ISS)</b><div id="oinfo" class="mut">Loading...</div></div><div id="omap"></div>
+<div class="card mut"><b>About free internet:</b> a website can't link to a satellite or give free internet by itself — that needs satellite hardware and a service provider (e.g. Starlink terminals or a local ISP). This page tracks a real satellite live; Cyber World itself works on any internet connection.</div></section>
+</main>
+<nav>
+<button data-t="feed" onclick="show('feed')">🏠 Feed</button><button data-t="people" onclick="show('people')">👥 People</button><button data-t="chat" onclick="show('chat')">💬 Chat</button><button data-t="live" onclick="show('live')">🔴 Live</button><button data-t="status" onclick="show('status')">⏳ Status</button><button data-t="map" onclick="show('map')">📍 Map</button><button data-t="orbit" onclick="show('orbit')">🛰️ Orbit</button></nav>
+<div id="call" hidden><video id="rv" autoplay playsinline></video><video id="cv" autoplay muted playsinline style="max-height:20vh"></video><button class="pink" onclick="endCall()">Hang up</button></div>
+</div>
+<script src="/socket.io/socket.io.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.t,me,sock,tab='feed',chatWith=null,lives=[],lastLocs=[];
+async function api(p,m='GET',b){const r=await fetch('/api/'+p,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:b?JSON.stringify(b):undefined});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Error');return j}
+const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',3000)}
+async function authIn(k){try{const r=await fetch('/api/'+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})});
+ const j=await r.json();if(!r.ok)throw new Error(j.error);token=localStorage.t=j.token;start()}catch(e){$('aerr').textContent=e.message}}
+async function start(){if(!token)return;try{me=await api('me')}catch{localStorage.removeItem('t');return}
+ $('auth').hidden=true;$('authbg').hidden=true;$('app').hidden=false;$('who').textContent='@'+me.username;
+ sock=io({auth:{token}});
+ sock.on('lives',x=>{lives=x;if(tab==='live')renderLives()});sock.on('dm',onDm);sock.on('locs',drawLocs);sock.on('rtc',onRtc);
+ sock.on('live:viewer',onViewer);sock.on('live:sig',onLiveSig);sock.on('live:ended',h=>{if(watching===h)stopWatch()});
+ sock.on('live:chat',m=>{const d=document.createElement('div');d.innerHTML='<b>'+esc(m.user)+'</b> '+esc(m.text);$('lchat').appendChild(d);$('lchat').scrollTop=1e9});
+ show('feed')}
+function logout(){localStorage.removeItem('t');location.reload()}
+function show(t){tab=t;document.querySelectorAll('section').forEach(s=>s.hidden=s.id!=='s-'+t);
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ Promise.resolve(({feed:loadFeed,people:loadPeople,chat:loadChats,live:renderLives,status:loadStatus,map:initMap,orbit:initOrbit})[t]()).catch(e=>toast(e.message))}
+function pickImg(inp){return new Promise(res=>{const f=inp.files[0];if(!f)return res('');const im=new Image();
+ im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};im.src=URL.createObjectURL(f)})}
+/* FEED */
+async function loadFeed(){const ps=await api('feed');
+ $('posts').innerHTML=ps.map(p=>`<div class=card><b>@${esc(p.user)}</b> <small>${ago(p.time)}</small><p>${esc(p.text)}</p>${p.image?`<img src="${esc(p.image)}">`:''}
+ <button onclick="like('${p.id}')">${p.likes.includes(me.username)?'💖':'🤍'} ${p.likes.length}</button>
+ ${p.comments.map(c=>`<div class=cm><b>@${esc(c.user)}</b> ${esc(c.text)}</div>`).join('')}
+ <div class=row><input id="c${p.id}" placeholder="Comment..."><button onclick="comment('${p.id}')">Send</button></div></div>`).join('')||'<p class=mut>No posts yet. Be the first!</p>'}
+async function doPost(){try{await api('posts','POST',{text:$('pt').value,image:await pickImg($('pi'))});$('pt').value='';$('pi').value='';loadFeed()}catch(e){toast(e.message)}}
+async function like(id){await api('posts/'+id+'/like','POST');loadFeed()}
+async function comment(id){const t=$('c'+id).value;if(!t.trim())return;await api('posts/'+id+'/comment','POST',{text:t});loadFeed()}
+/* PEOPLE */
+async function loadPeople(){const us=await api('users?q='+encodeURIComponent($('q').value));
+ $('plist').innerHTML=us.map(u=>`<div class="card row"><span>@${u.username} <small>${u.followers} followers</small></span><span><button onclick="follow('${u.username}')">${u.followed?'Unfollow':'Follow'}</button> <button onclick="openChat('${u.username}')">Chat</button></span></div>`).join('')||'<p class=mut>No other users yet — invite friends!</p>'}
+async function follow(n){await api('follow/'+n,'POST');loadPeople()}
+/* CHAT */
+async function loadChats(){const c=await api('chats');$('clist').innerHTML=c.map(u=>`<button onclick="openChat('${u}')">@${u}</button>`).join('')||'<span class=mut>No chats yet — find people in the People tab.</span>';if(chatWith)openChat(chatWith)}
+async function openChat(u){chatWith=u;if(tab!=='chat')return show('chat');$('cbox').hidden=false;$('cname').textContent='@'+u;$('msgs').innerHTML='';(await api('messages/'+u)).forEach(addMsg)}
+function addMsg(m){const d=document.createElement('div');d.className='m '+(m.from===me.username?'me':'');d.textContent=m.text;$('msgs').appendChild(d);$('msgs').scrollTop=1e9}
+function sendDm(){const t=$('mt').value.trim();if(!t||!chatWith)return;sock.emit('dm',{to:chatWith,text:t});$('mt').value=''}
+function onDm(m){const o=m.from===me.username?m.to:m.from;if(tab==='chat'&&chatWith===o)addMsg(m);else if(m.to===me.username)toast('💬 @'+m.from+': '+m.text.slice(0,40))}
+/* VIDEO CALL */
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};let pc,peer,stream;
+function addIce(p,c){if(p.remoteDescription)p.addIceCandidate(c).catch(()=>{});else(p._q=p._q||[]).push(c)}
+async function setRemote(p,d){await p.setRemoteDescription(d);(p._q||[]).forEach(c=>p.addIceCandidate(c).catch(()=>{}));p._q=[]}
+async function mkCall(){stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});$('cv').srcObject=stream;$('call').hidden=false;
+ pc=new RTCPeerConnection(ICE);stream.getTracks().forEach(t=>pc.addTrack(t,stream));pc.ontrack=e=>$('rv').srcObject=e.streams[0];
+ pc.onicecandidate=e=>e.candidate&&sock.emit('rtc',{to:peer,data:{ice:e.candidate}})}
+async function startCall(to){if(!to)return;try{peer=to;await mkCall();const o=await pc.createOffer();await pc.setLocalDescription(o);sock.emit('rtc',{to,data:{offer:o}})}catch(e){toast('Camera/mic error: '+e.message);endCall()}}
+async function onRtc({from,data}){
+ if(data.offer){if(pc||!confirm('@'+from+' is calling. Answer?')){sock.emit('rtc',{to:from,data:{bye:1}});return}
+  try{peer=from;await mkCall();await setRemote(pc,data.offer);const a=await pc.createAnswer();await pc.setLocalDescription(a);sock.emit('rtc',{to:from,data:{answer:a}})}catch(e){toast(e.message);endCall()}}
+ else if(data.answer&&pc)await setRemote(pc,data.answer);
+ else if(data.ice&&pc)addIce(pc,data.ice);
+ else if(data.bye&&from===peer)endCall(true)}
+function endCall(remote){if(!remote&&peer)sock.emit('rtc',{to:peer,data:{bye:1}});pc&&pc.close();pc=null;stream&&stream.getTracks().forEach(t=>t.stop());stream=null;peer=null;$('call').hidden=true}
+/* LIVE */
+let liveStream,hostPcs={},watching,wpc;
+function renderLives(){$('lives').innerHTML=lives.filter(h=>h!==me.username).map(h=>`<div class="card row"><span>🔴 @${h}</span><button onclick="watch('${h}')">Watch</button></div>`).join('')||'<p class=mut>Nobody is live right now.</p>'}
+async function toggleLive(){if(liveStream){sock.emit('live:stop');liveStream.getTracks().forEach(t=>t.stop());liveStream=null;Object.values(hostPcs).forEach(p=>p.close());hostPcs={};$('lv').hidden=true;$('gl').textContent='🔴 Go Live';return}
+ try{liveStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true})}catch(e){return toast('Camera/mic error: '+e.message)}
+ $('lv').srcObject=liveStream;$('lv').hidden=false;$('gl').textContent='⏹ End live';sock.emit('live:start')}
+async function onViewer({id}){if(!liveStream)return;const p=new RTCPeerConnection(ICE);hostPcs[id]=p;liveStream.getTracks().forEach(t=>p.addTrack(t,liveStream));
+ p.onicecandidate=e=>e.candidate&&sock.emit('live:sig',{to:id,data:{ice:e.candidate}});
+ const o=await p.createOffer();await p.setLocalDescription(o);sock.emit('live:sig',{to:id,data:{offer:o}})}
+async function onLiveSig({from,data}){
+ if(data.offer){wpc&&wpc.close();const p=wpc=new RTCPeerConnection(ICE);p.ontrack=e=>$('wv').srcObject=e.streams[0];
+  p.onicecandidate=e=>e.candidate&&sock.emit('live:sig',{to:from,data:{ice:e.candidate}});
+  await setRemote(p,data.offer);const a=await p.createAnswer();await p.setLocalDescription(a);sock.emit('live:sig',{to:from,data:{answer:a}})}
+ else if(data.answer&&hostPcs[from])await setRemote(hostPcs[from],data.answer);
+ else if(data.ice){const p=hostPcs[from]||wpc;p&&addIce(p,data.ice)}}
+function watch(h){watching=h;$('wbox').hidden=false;$('wname').textContent='🔴 @'+h;$('lchat').innerHTML='';sock.emit('live:join',h)}
+function stopWatch(){watching=null;wpc&&wpc.close();wpc=null;$('wv').srcObject=null;$('wbox').hidden=true}
+function liveChat(){const t=$('lt').value.trim();if(t&&watching){sock.emit('live:chat',{host:watching,text:t});$('lt').value=''}}
+/* STATUS */
+async function loadStatus(){const s=await api('statuses');
+ $('slist').innerHTML=s.map(x=>`<div class=card><b>@${esc(x.user)}</b> <small>${ago(x.time)} ago · gone in 24h</small><p>${esc(x.text)}</p>${x.image?`<img src="${esc(x.image)}">`:''}</div>`).join('')||'<p class=mut>No statuses right now.</p>'}
+async function postStatus(){try{await api('status','POST',{text:$('st').value,image:await pickImg($('si'))});$('st').value='';$('si').value='';loadStatus()}catch(e){toast(e.message)}}
+/* MAP + LOCATION */
+let map,markers=[],watchId=null,centered=false;
+function mkMap(el,z){const m=L.map(el).setView([9.07,7.4],z);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(m);return m}
+async function initMap(){if(!map){map=mkMap('map',5);drawLocs(lastLocs)}setTimeout(()=>map.invalidateSize(),50)}
+function drawLocs(v){lastLocs=v;if(!map)return;markers.forEach(m=>m.remove());markers=v.map(l=>L.marker([l.lat,l.lng]).addTo(map).bindTooltip('@'+l.user,{permanent:true}))}
+function toggleShare(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;sock.emit('loc:stop');$('sh').textContent='📍 Share my location';return}
+ if(!navigator.geolocation)return toast('Location not supported on this device');
+ watchId=navigator.geolocation.watchPosition(p=>{sock.emit('loc',{lat:p.coords.latitude,lng:p.coords.longitude});if(!centered){map.setView([p.coords.latitude,p.coords.longitude],14);centered=true}},
+ e=>toast('Location error: '+e.message),{enableHighAccuracy:true,maximumAge:5000});$('sh').textContent='⏹ Stop sharing'}
+/* SATELLITE */
+let omap,iss,otimer;
+async function initOrbit(){if(!omap){omap=mkMap('omap',2);iss=L.circleMarker([0,0],{radius:9,color:'#ff2bd6',fillOpacity:.7}).addTo(omap)}
+ setTimeout(()=>omap.invalidateSize(),50);clearInterval(otimer);updIss();otimer=setInterval(()=>{if(tab==='orbit')updIss()},5000)}
+async function updIss(){try{const d=await fetch('https://api.wheretheiss.at/v1/satellites/25544').then(r=>r.json());
+ iss.setLatLng([d.latitude,d.longitude]);omap.panTo([d.latitude,d.longitude]);
+ $('oinfo').innerHTML=`Lat ${d.latitude.toFixed(2)}, Lng ${d.longitude.toFixed(2)}<br>Altitude ${d.altitude.toFixed(0)} km · Speed ${d.velocity.toFixed(0)} km/h`}catch{$('oinfo').textContent='Could not reach the satellite tracking service.'}}
+start();
+</script></body></html>
