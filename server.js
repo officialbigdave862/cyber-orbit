@@ -5,6 +5,7 @@ const DIR=process.env.DATA_DIR||path.join(__dirname,'data');fs.mkdirSync(DIR,{re
 const F=path.join(DIR,'db.json');
 let db={users:{},posts:[],statuses:[],messages:[]};
 try{db=JSON.parse(fs.readFileSync(F))}catch(e){}
+db.market=db.market||[];
 let tm;const save=()=>{clearTimeout(tm);tm=setTimeout(()=>fs.writeFile(F,JSON.stringify(db),()=>{}),500)};
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const aud=s=>/^data:audio\/(webm|ogg|mp4|mpeg|aac|x-m4a|wav)(;codecs=[A-Za-z0-9.,=-]+)?;base64,[A-Za-z0-9+\/=]+$/.test(s)&&s.length<1.5e6?s:'';
@@ -14,6 +15,8 @@ app.get('/',(q,r)=>{const a=path.join(__dirname,'public','index.html'),b=path.jo
 const srv=http.createServer(app),io=new Server(srv,{maxHttpBufferSize:3e6});
 const pub=u=>({username:u.username,firstName:u.firstName||'',surname:u.surname||'',followers:u.followers.length,following:u.following.length});
 const blk=(a,b)=>((db.users[a]||{}).blocked||[]).includes(b)||((db.users[b]||{}).blocked||[]).includes(a);
+const pubMsg=m=>{if(!m.snap)return m;const {snap,...x}=m;return {...x,hasSnap:true}};
+const lite=(q,a)=>q.query.lite==='1'?a.map(x=>x.image?{...x,image:'',hasImage:true,kb:Math.round(x.image.length*.75/1024)}:x):a;
 const tok=u=>jwt.sign({u},SECRET,{expiresIn:'30d'});
 function auth(q,r,n){try{q.u=db.users[jwt.verify((q.headers.authorization||'').slice(7),SECRET).u];if(!q.u)throw 0;n()}catch(e){r.status(401).json({error:'Login required'})}}
 app.post('/api/register',async(q,r)=>{const u=String(q.body.username||'').trim().toLowerCase(),p=String(q.body.password||'');
@@ -30,7 +33,7 @@ app.post('/api/register',async(q,r)=>{const u=String(q.body.username||'').trim()
 app.post('/api/login',async(q,r)=>{const u=db.users[String(q.body.username||'').trim().toLowerCase()];
  if(!u||!await bcrypt.compare(String(q.body.password||''),u.hash))return r.status(400).json({error:'Wrong username or password'});
  r.json({token:tok(u.username)})});
-app.get('/api/me',auth,(q,r)=>r.json({...pub(q.u),followingList:q.u.following,blockedList:q.u.blocked||[]}));
+app.get('/api/me',auth,(q,r)=>r.json({...pub(q.u),followingList:q.u.following,blockedList:q.u.blocked||[],savedList:q.u.saved||[],trustedList:q.u.trusted||[]}));
 app.get('/api/avatars',auth,(q,r)=>{const o={};Object.values(db.users).forEach(x=>{if(x.avatar&&!blk(q.u.username,x.username))o[x.username]=x.avatar});r.json(o)});
 app.post('/api/avatar',auth,(q,r)=>{const i=img(String(q.body.image||''));if(!i||i.length>3e5)return r.status(400).json({error:'Use a smaller photo'});q.u.avatar=i;save();r.json({ok:1})});
 app.post('/api/password',auth,async(q,r)=>{const o=String(q.body.old||''),n=String(q.body.new||'');if(!await bcrypt.compare(o,q.u.hash))return r.status(400).json({error:'Current password is wrong'});
@@ -45,7 +48,7 @@ app.post('/api/follow/:n',auth,(q,r)=>{const o=db.users[q.params.n];if(!o||o===q
  const i=q.u.following.indexOf(o.username);
  if(i<0){q.u.following.push(o.username);o.followers.push(q.u.username)}else{q.u.following.splice(i,1);o.followers=o.followers.filter(x=>x!==q.u.username)}
  save();r.json({followed:i<0})});
-app.get('/api/feed',auth,(q,r)=>r.json(db.posts.slice(-100).reverse().filter(p=>!blk(q.u.username,p.user)).map(p=>({...p,comments:p.comments.filter(c=>!blk(q.u.username,c.user))}))));
+app.get('/api/feed',auth,(q,r)=>r.json(lite(q,db.posts.slice(-100).reverse().filter(p=>!blk(q.u.username,p.user)).map(p=>({...p,comments:p.comments.filter(c=>!blk(q.u.username,c.user))})))));
 app.post('/api/posts',auth,(q,r)=>{const text=String(q.body.text||'').trim().slice(0,500),image=img(String(q.body.image||''));
  if(!text&&!image)return r.status(400).json({error:'Write something or add a photo'});
  db.posts.push({id:id(),user:q.u.username,text,image,time:Date.now(),likes:[],comments:[]});save();r.json({ok:1})});
@@ -53,12 +56,22 @@ app.post('/api/posts/:id/like',auth,(q,r)=>{const p=db.posts.find(x=>x.id===q.pa
  const i=p.likes.indexOf(q.u.username);i<0?p.likes.push(q.u.username):p.likes.splice(i,1);save();r.json({ok:1})});
 app.post('/api/posts/:id/comment',auth,(q,r)=>{const p=db.posts.find(x=>x.id===q.params.id),t=String(q.body.text||'').trim().slice(0,300);
  if(!p||!t)return r.sendStatus(400);p.comments.push({user:q.u.username,text:t,time:Date.now()});save();r.json({ok:1})});
-app.get('/api/statuses',auth,(q,r)=>{const c=Date.now()-864e5;db.statuses=db.statuses.filter(s=>s.time>c);r.json(db.statuses.slice().reverse().filter(s=>!blk(q.u.username,s.user)))});
+app.get('/api/statuses',auth,(q,r)=>{const c=Date.now()-864e5;db.statuses=db.statuses.filter(s=>s.time>c);r.json(lite(q,db.statuses.slice().reverse().filter(s=>!blk(q.u.username,s.user))))});
 app.post('/api/status',auth,(q,r)=>{const text=String(q.body.text||'').trim().slice(0,200),image=img(String(q.body.image||''));
  if(!text&&!image)return r.sendStatus(400);db.statuses.push({id:id(),user:q.u.username,text,image,time:Date.now()});save();r.json({ok:1})});
-app.get('/api/messages/:n',auth,(q,r)=>{const a=q.u.username,b=q.params.n;r.json(db.messages.filter(m=>(m.from===a&&m.to===b)||(m.from===b&&m.to===a)).slice(-200))});
+app.get('/api/messages/:n',auth,(q,r)=>{const a=q.u.username,b=q.params.n;r.json(db.messages.filter(m=>(m.from===a&&m.to===b)||(m.from===b&&m.to===a)).slice(-200).map(pubMsg))});
 app.get('/api/chats',auth,(q,r)=>{const s=new Set();db.messages.forEach(m=>{if(m.from===q.u.username)s.add(m.to);if(m.to===q.u.username)s.add(m.from)});r.json([...s].filter(x=>!blk(q.u.username,x)))});
 
+app.get('/api/img/:k/:id',auth,(q,r)=>{const L={post:db.posts,status:db.statuses,market:db.market}[q.params.k]||[];const x=L.find(y=>y.id===q.params.id);if(!x||blk(q.u.username,x.user))return r.sendStatus(404);r.json({image:x.image||''})});
+app.get('/api/market',auth,(q,r)=>r.json(lite(q,db.market.slice(-100).reverse().filter(m=>!blk(q.u.username,m.user)))));
+app.post('/api/market',auth,(q,r)=>{const t=String(q.body.title||'').trim().slice(0,60),pr=String(q.body.price||'').trim().slice(0,20),d=String(q.body.desc||'').trim().slice(0,300),im=img(String(q.body.image||''));
+ if(!t||!pr)return r.status(400).json({error:'Add a title and a price'});db.market.push({id:id(),user:q.u.username,title:t,price:pr,desc:d,image:im,time:Date.now()});save();r.json({ok:1})});
+app.delete('/api/market/:id',auth,(q,r)=>{db.market=db.market.filter(m=>!(m.id===q.params.id&&m.user===q.u.username));save();r.json({ok:1})});
+app.post('/api/trusted/:n',auth,(q,r)=>{const o=db.users[q.params.n];if(!o||o===q.u||blk(q.u.username,o.username))return r.status(400).json({error:'User not found'});q.u.trusted=q.u.trusted||[];
+ const i=q.u.trusted.indexOf(o.username);if(i<0){if(q.u.trusted.length>=5)return r.status(400).json({error:'Maximum 5 trusted contacts'});q.u.trusted.push(o.username)}else q.u.trusted.splice(i,1);save();r.json({ok:1})});
+app.post('/api/save/:id',auth,(q,r)=>{q.u.saved=q.u.saved||[];const i=q.u.saved.indexOf(q.params.id);i<0?q.u.saved.push(q.params.id):q.u.saved.splice(i,1);save();r.json({saved:i<0})});
+app.get('/api/saved',auth,(q,r)=>r.json(lite(q,db.posts.filter(p=>(q.u.saved||[]).includes(p.id)&&!blk(q.u.username,p.user)).reverse())));
+app.post('/api/snap/:id/view',auth,(q,r)=>{const m=db.messages.find(x=>x.id===q.params.id&&x.to===q.u.username);if(!m||!m.snap)return r.status(404).json({error:'Snap already opened'});const i=m.snap;delete m.snap;m.viewed=true;save();r.json({image:i})});
 const online={},locs={},lives={},liveLikes={};
 const stats=h=>{const n=Math.max(0,((io.sockets.adapter.rooms.get('live:'+h)||{size:1}).size)-1);io.to('live:'+h).emit('live:stats',{host:h,viewers:n,likes:liveLikes[h]||0})};
 const emitTo=(u,ev,d)=>(online[u]||[]).forEach(i=>io.to(i).emit(ev,d));
@@ -67,8 +80,8 @@ function pushLocs(){for(const [u,set] of Object.entries(online)){const me=db.use
 io.use((s,n)=>{try{s.user=jwt.verify(s.handshake.auth.token,SECRET).u;if(!db.users[s.user])throw 0;n()}catch(e){n(new Error('auth'))}});
 io.on('connection',s=>{const u=s.user;(online[u]=online[u]||new Set()).add(s.id);
  s.emit('lives',Object.keys(lives));pushLocs();
- s.on('dm',({to,text,audio})=>{text=String(text||'').trim().slice(0,1000);audio=aud(String(audio||''));if(!db.users[to]||(!text&&!audio)||to===u||blk(u,to))return;
-  const m={id:id(),from:u,to,text,time:Date.now(),...(audio?{audio}:{})};db.messages.push(m);save();emitTo(to,'dm',m);emitTo(u,'dm',m)});
+ s.on('dm',({to,text,audio,lang,transcript,snap})=>{text=String(text||'').trim().slice(0,1000);audio=aud(String(audio||''));snap=img(String(snap||''));if(!db.users[to]||(!text&&!audio&&!snap)||to===u||blk(u,to))return;
+  const m={id:id(),from:u,to,text,time:Date.now(),...(audio?{audio,lang:String(lang||'').slice(0,12),transcript:String(transcript||'').slice(0,1000)}:{}),...(snap?{snap}:{})};db.messages.push(m);save();emitTo(to,'dm',pubMsg(m));emitTo(u,'dm',pubMsg(m))});
  s.on('loc',l=>{if(isFinite(l.lat)&&isFinite(l.lng)){locs[u]={user:u,lat:+l.lat,lng:+l.lng,time:Date.now()};pushLocs()}});
  s.on('loc:stop',()=>{delete locs[u];pushLocs()});
  s.on('rtc',({to,data})=>emitTo(to,'rtc',{from:u,data}));
@@ -79,6 +92,14 @@ io.on('connection',s=>{const u=s.user;(online[u]=online[u]||new Set()).add(s.id)
  s.on('live:like',h=>{if(lives[h]&&s.rooms.has('live:'+h)){liveLikes[h]=(liveLikes[h]||0)+1;io.to('live:'+h).emit('live:like',{user:u});stats(h)}});
  s.on('live:sig',({to,data})=>io.to(to).emit('live:sig',{from:s.id,data}));
  s.on('live:chat',({host,text})=>{text=String(text||'').trim().slice(0,200);if(text&&s.rooms.has('live:'+host))io.to('live:'+host).emit('live:chat',{user:u,text})});
+ s.on('sos',({lat,lng})=>{(db.users[u].trusted||[]).forEach(t=>{if(blk(u,t))return;
+  const link=isFinite(lat)&&isFinite(lng)?' https://www.google.com/maps?q='+(+lat)+','+(+lng):'';
+  const m={id:id(),from:u,to:t,text:'🆘 SOS! I need help.'+link,time:Date.now()};db.messages.push(m);emitTo(t,'dm',m);emitTo(u,'dm',m);
+  emitTo(t,'sos',{user:u,lat:+lat,lng:+lng,time:Date.now()})});save()});
+ s.on('sos:loc',({lat,lng})=>(db.users[u].trusted||[]).forEach(t=>emitTo(t,'sos',{user:u,lat:+lat,lng:+lng,time:Date.now()})));
+ s.on('sos:stop',()=>(db.users[u].trusted||[]).forEach(t=>emitTo(t,'sos:stop',u)));
+ s.on('chatloc',({to,lat,lng})=>{if(db.users[to]&&!blk(u,to)&&isFinite(lat)&&isFinite(lng))emitTo(to,'chatloc',{from:u,lat:+lat,lng:+lng,time:Date.now()})});
+ s.on('chatloc:stop',to=>emitTo(to,'chatloc:stop',u));
  s.on('disconnecting',()=>{for(const r of s.rooms)if(r.startsWith('live:')&&r!=='live:'+u)setTimeout(()=>stats(r.slice(5)),50)});
  s.on('disconnect',()=>{online[u].delete(s.id);
   if(!online[u].size){delete online[u];delete locs[u];pushLocs()}
