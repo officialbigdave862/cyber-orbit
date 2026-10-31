@@ -78,9 +78,23 @@ audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8
 #sv button,#call button.pink{color:#fff}#sv button{background:none}
 .err{color:#ff6b6b;min-height:18px;margin:6px 0}#auth .pw{position:relative;margin:6px 0}#auth .pw input{margin:0;padding-right:46px}
 #auth .pw button{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;min-height:0;padding:6px 10px}[data-theme=light] #auth .pw button{background:none}
+select{background:#121212;color:#fff;border:1px solid #363636;border-radius:8px;padding:6px;font-size:14px;max-width:60%}
+[data-theme=light] select{background:#fafafa;color:#000;border-color:#dbdbdb}
+.ldp{background:#1a1a1a;color:#a8a8a8;padding:36px 10px;text-align:center;cursor:pointer;border-radius:8px}[data-theme=light] .ldp{background:#efefef}
+.mimg{width:100%;border-radius:8px;max-height:300px;object-fit:cover}
+nav button{padding:6px 8px}
+#sosb{width:150px;height:150px;border-radius:50%;background:#dc2626;color:#fff;font-size:34px;font-weight:800;border:6px solid #fecaca;margin:10px auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation;box-shadow:0 0 30px #dc2626aa}
+#guide{display:block;margin:0 auto;animation:br 4s ease-in-out infinite}@keyframes br{50%{transform:translateY(3px)}}
+#guide #head{transform-origin:100px 130px;transition:transform .4s}#guide.lk #head{transform:rotate(3deg)}#guide.lk #pup{transform:translate(0,3px)}
+#guide #hands ellipse{transition:transform .45s ease}#guide.shy #hands ellipse{transform:translateY(-78px)}
+#guide .lid ellipse{transform-box:fill-box;transform-origin:center;transform:scaleY(0);animation:bl 4s infinite}@keyframes bl{0%,94%,100%{transform:scaleY(0)}97%{transform:scaleY(1)}}
+#guide.hi #rh{animation:wv .9s ease-in-out 4}@keyframes wv{50%{transform:translate(10px,-38px) rotate(20deg)}}
+#tick{transition:opacity .3s}#earth{background:radial-gradient(circle at 50% 30%,#1b1050,#05030f 70%)}
 </style></head><body>
-<div id="earth"></div><div id="authbg"></div><div id="toast"></div>
-<div id="auth"><h1 class="grad">Cyber World</h1><p class="mut">Share moments. Chat. Go live. 🌍</p>
+<canvas id="earth"></canvas><div id="authbg"></div><div id="toast"></div>
+<div id="auth"><canvas id="gb" width="250" height="250" style="display:block;margin:0 auto;max-width:100%"></canvas>
+<video id="wvid" autoplay muted loop playsinline hidden onloadeddata="this.hidden=false" onerror="this.hidden=true" style="width:96px;height:96px;object-fit:cover;border-radius:50%;border:3px solid #fffc00;margin:2px auto 6px"></video>
+<h1 class="grad">Cyber World</h1><p id="tick" class="mut" style="margin:0 0 2px;min-height:18px"></p><p id="gtalk" class="mut">Welcome back! 👋 Log in to continue</p>
 <div id="login"><h3 style="margin:10px 0">Log in</h3>
 <input id="u" placeholder="Username" autocapitalize="off" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
 <div class="pw"><input id="p" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" onclick="togglePw('p',this)">👁</button></div>
@@ -95,7 +109,7 @@ audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8
 <p id="serr" class="err"></p><button class="yel" style="width:100%" onclick="doSignup()">Sign up</button>
 <p class="mut">Already have an account?</p><button style="width:100%" onclick="showAuth('login')">Back to log in</button></div></div>
 <div id="app" hidden>
-<header><h2 class="grad">Cyber World</h2><span><button onclick="show('map')">🌍</button><button onclick="show('orbit')">🛰️</button><button onclick="show('settings')" style="display:inline-flex;align-items:center;gap:6px"><span id="hav"></span><small id="who"></small>⚙️</button></span></header>
+<header><h2 class="grad">Cyber World</h2><span><button onclick="show('map')">🌍</button><button onclick="show('sos')">🆘</button><button onclick="show('settings')" style="display:inline-flex;align-items:center;gap:6px"><span id="hav"></span><small id="who"></small>⚙️</button></span></header>
 <main>
 <section id="s-feed"><div id="stories" class="stories"></div><div id="posts"></div></section>
 <section id="s-people" hidden><div style="padding-top:10px"><input id="q" placeholder="🔍 Search people" oninput="loadPeople()"></div><div id="plist"></div></section>
@@ -104,15 +118,25 @@ audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8
 <div class="row"><label class="mut" style="cursor:pointer">📷 Add photo<input type="file" id="ci" accept="image/*" hidden onchange="prev(this)"></label></div>
 <div class="row"><button class="blue" style="flex:1" onclick="doPost(false)">Share to Feed</button><button class="yel" style="flex:1" onclick="doPost(true)">Add to Story</button></div></div></section>
 <section id="s-chat" hidden><div id="clist"></div>
-<div id="cbox" hidden><div class="chead"><button onclick="backChat()">←</button><span id="cname"></span><button onclick="startCall(chatWith)">📹</button><button onclick="askBlock(chatWith)">🚫</button></div><div id="msgs"></div>
-<div class="row"><button class="mic" id="mic" onclick="toggleRec()">🎤</button><input id="mt" placeholder="Send a chat" onkeydown="if(event.key==='Enter')sendDm()"><button class="blue" onclick="sendDm()">Send</button></div></div></section>
+<div id="cbox" hidden><div class="chead"><button onclick="backChat()">←</button><span id="cname"></span><button onclick="startCall(chatWith)">📹</button><button id="cls" onclick="toggleChatShare()">📍</button><button onclick="askBlock(chatWith)">🚫</button></div><div id="lbanner" class="mut" hidden style="padding:6px 0"></div><div id="msgs"></div>
+<div class="row" style="margin-top:4px"><small>🌍 Voice note language</small><select id="vl"><option value="en-NG|Nigerian Pidgin">Nigerian Pidgin</option><option value="en-NG|English">English</option><option value="ha-NG|Hausa">Hausa</option><option value="yo-NG|Yoruba">Yoruba</option><option value="ig-NG|Igbo">Igbo</option><option value="sw-KE|Swahili">Swahili</option><option value="zu-ZA|Zulu">Zulu</option><option value="am-ET|Amharic">Amharic</option><option value="fr-FR|French">French</option></select></div>
+<div class="row"><button class="mic" id="mic" onclick="toggleRec()">🎤</button><label class="ic" style="cursor:pointer;font-size:22px">📸<input type="file" accept="image/*" hidden onchange="sendSnap(this)"></label><input id="mt" placeholder="Send a chat" onkeydown="if(event.key==='Enter')sendDm()"><button class="blue" onclick="sendDm()">Send</button></div></div></section>
 <section id="s-settings" hidden>
 <div class="card" id="sprof" style="display:flex;gap:12px;align-items:center"></div>
 <div class="card"><b>Profile picture</b><div class="row"><label class="mut" style="cursor:pointer">📷 Choose a new photo<input type="file" accept="image/*" hidden onchange="setAvatar(this)"></label></div></div>
+<div class="card"><b>📉 Low data mode</b><p class="mut" style="margin:6px 0">Photos load only when you tap them, uploads are shrunk, and the Earth background is off. Saves mobile data.</p><button id="ldb" onclick="toggleLD()" style="width:100%"></button></div>
+<div class="card row"><button onclick="show('saved')" style="flex:1">⭐ Saved posts</button><button onclick="show('orbit')" style="flex:1">🛰️ Satellite tracker</button></div>
 <div class="card"><b>Theme</b><div class="row"><button class="thb" data-th="dark" onclick="applyTheme('dark')" style="flex:1">🌙 Dark</button><button class="thb" data-th="light" onclick="applyTheme('light')" style="flex:1">☀️ Light</button></div></div>
 <div class="card"><b>🔒 Security</b><input id="op" type="password" placeholder="Current password" style="margin-top:8px"><input id="np" type="password" placeholder="New password (6+ characters)" style="margin-top:6px">
 <div class="row"><button class="blue" onclick="chPw()">Change password</button><button class="pink" onclick="logout()">Log out</button></div></div>
 <div class="card"><b>🚫 Blocked accounts</b><div class="row"><input id="bu" placeholder="Username to block"><button onclick="askBlock($('bu').value.trim().toLowerCase())">Block</button></div><div id="blist"></div></div></section>
+<section id="s-sos" hidden><div class="card" style="text-align:center"><b>🆘 Safety</b><p class="mut">Press and hold the button for 2 seconds. Your trusted contacts get an alert and your live location until you tap again.</p>
+<button id="sosb" onpointerdown="sosDown()" onpointerup="sosUp()" onpointerleave="sosUp()" onclick="if(sosOn)sosStop()" oncontextmenu="return false">SOS</button><p id="sosst" class="mut"></p></div>
+<div class="card"><b>Trusted contacts (max 5)</b><div class="row"><input id="tu" placeholder="Username"><button class="blue" onclick="addTrusted()">Add</button></div><div id="tlist"></div></div></section>
+<section id="s-market" hidden><div class="card"><b>🛍️ Marketplace</b><p class="mut">Sell anything — add a photo and a price. Buyers chat with you directly.</p>
+<input id="mtt" placeholder="What are you selling?"><input id="mpr" placeholder="Price (e.g. ₦5,000)" style="margin-top:6px"><textarea id="mds" rows="2" placeholder="Description" style="margin-top:6px"></textarea>
+<div class="row"><label class="mut" style="cursor:pointer">📷 Add photo<input type="file" id="mim" accept="image/*" hidden></label><button class="blue" onclick="sell()">List item</button></div></div><div id="mlist"></div></section>
+<section id="s-saved" hidden><h3 style="margin-top:14px">⭐ Saved posts</h3><div id="svlist"></div></section>
 <section id="s-live" hidden><div class="card" id="hbox"><div id="hstat" class="mut"></div><button class="pink" style="width:100%" id="gl" onclick="toggleLive()">🔴 Go Live</button>
 <video id="lv" autoplay muted playsinline hidden style="width:100%;margin-top:8px"></video></div>
 <h3>Live now</h3><div id="lives"></div>
@@ -124,7 +148,7 @@ audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8
 <section id="s-orbit" hidden><div class="card"><b>🛰️ Live satellite tracker (ISS)</b><div id="oinfo" class="mut">Loading...</div></div><div id="omap"></div>
 <div class="card mut"><b>About free internet:</b> a website can't link to a satellite or give free internet by itself — that needs satellite hardware and a provider. This page tracks a real satellite live.</div></section>
 </main>
-<nav><button data-t="feed" onclick="show('feed')">🏠</button><button data-t="people" onclick="show('people')">🔍</button><button class="mid" data-t="create" onclick="show('create')">＋</button><button data-t="chat" onclick="chatWith=null;show('chat')">💬</button><button data-t="live" onclick="show('live')">🔴</button></nav>
+<nav><button data-t="feed" onclick="show('feed')">🏠</button><button data-t="people" onclick="show('people')">🔍</button><button class="mid" data-t="create" onclick="show('create')">＋</button><button data-t="chat" onclick="chatWith=null;show('chat')">💬</button><button data-t="market" onclick="show('market')">🛍️</button><button data-t="live" onclick="show('live')">🔴</button></nav>
 <div id="call" hidden><video id="rv" autoplay playsinline></video><video id="cv" autoplay muted playsinline style="max-height:20vh"></video><button class="pink" onclick="endCall()">Hang up</button></div>
 <div id="sv" hidden><div id="svp"></div><div id="svh"></div><div id="svb"></div>
 <div style="position:absolute;inset:0;top:60px"><div class="tap" style="left:0" onclick="stepStory(-1)"></div><div class="tap" style="right:0" onclick="stepStory(1)"></div></div>
@@ -147,27 +171,31 @@ async function start(){if(!token)return;try{me=await api('me')}catch{localStorag
  sock=io({auth:{token}});
  sock.on('lives',x=>{lives=x;if(tab==='live')renderLives()});sock.on('dm',onDm);
  sock.on('live:stats',s=>{const e=s.host===me.username?$('hstat'):(s.host===watching?$('vstat'):null);if(e)e.textContent='👁 '+s.viewers+' watching · ❤️ '+s.likes});
- sock.on('live:like',()=>heart(liveStream?$('hbox'):$('wbox')));sock.on('live:started',u=>toast('🔴 @'+u+' is live — tap 🔴 to join'));sock.on('locs',drawLocs);sock.on('rtc',onRtc);
+ sock.on('live:like',()=>heart(liveStream?$('hbox'):$('wbox')));
+ sock.on('chatloc',d=>{if(!FL[d.from])toast('📍 @'+d.from+' is sharing their live location — open the map 🌍');FL[d.from]=d;redraw();banner()});
+ sock.on('chatloc:stop',u=>{delete FL[u];redraw();banner()});
+ sock.on('sos',d=>{const first=!SOSL[d.user];SOSL[d.user]=d;redraw();if(first)showSosAlert(d)});
+ sock.on('sos:stop',u=>{delete SOSL[u];redraw();const a=$('sosa');if(a)a.remove()});sock.on('live:started',u=>toast('🔴 @'+u+' is live — tap 🔴 to join'));sock.on('locs',drawLocs);sock.on('rtc',onRtc);
  sock.on('live:viewer',onViewer);sock.on('live:sig',onLiveSig);sock.on('live:ended',h=>{if(watching===h)stopWatch()});
  sock.on('live:chat',m=>{const d=document.createElement('div');d.innerHTML='<b>'+esc(m.user)+'</b> '+esc(m.text);$('lchat').appendChild(d);$('lchat').scrollTop=1e9});
  await loadAv();setHdr();show('feed');toast('Welcome, '+(me.firstName||'@'+me.username)+' 👋')}
 function logout(){localStorage.removeItem('t');location.reload()}
 function show(t){tab=t;document.querySelectorAll('section').forEach(s=>s.hidden=s.id!=='s-'+t);
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0);
- loadAv().then(()=>({feed:loadFeed,people:loadPeople,chat:loadChats,live:renderLives,create:()=>{},map:initMap,orbit:initOrbit,settings:loadSettings})[t]()).catch(e=>toast(e.message))}
-function pickImg(inp,mx=800){return new Promise(res=>{const f=inp.files[0];if(!f)return res('');const im=new Image();
+ loadAv().then(()=>({feed:loadFeed,people:loadPeople,chat:loadChats,live:renderLives,create:()=>{},map:initMap,orbit:initOrbit,settings:loadSettings,market:loadMarket,sos:loadSos,saved:loadSaved})[t]()).catch(e=>toast(e.message))}
+function pickImg(inp,mx){mx=mx||(LD()?480:800);return new Promise(res=>{const f=inp.files[0];if(!f)return res('');const im=new Image();
  im.onload=()=>{const k=Math.min(1,mx/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
- c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};im.src=URL.createObjectURL(f)})}
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',LD()?.5:.75))};im.src=URL.createObjectURL(f)})}
 function prev(i){const f=i.files[0];$('prev').hidden=!f;if(f)$('prev').src=URL.createObjectURL(f)}
 /* FEED + STORIES */
-async function loadFeed(){const y=scrollY,[ps,ss]=await Promise.all([api('feed'),api('statuses')]);
+async function loadFeed(){const y=scrollY,[ps,ss]=await Promise.all([api('feed'+LDQ()),api('statuses'+LDQ())]);
  POSTS=ps;const by={};ss.slice().reverse().forEach(s=>(by[s.user]=by[s.user]||[]).push(s));STORIES=by;
  $('stories').innerHTML=`<div class=st onclick="show('create')"><span class="ring add">${av(me.username,56)}<b>＋</b></span><small>Your story</small></div>`+
   Object.keys(by).map(u=>`<div class=st onclick="openStory('${u}')"><span class=ring>${av(u,56)}</span><small>${u===me.username?'You':u}</small></div>`).join('');
  $('posts').innerHTML=ps.map(p=>{const liked=p.likes.includes(me.username);return `<div class=post><div class=ph>${av(p.user)}<b>${esc(p.user)}</b><small>• ${ago(p.time)}</small>${p.user!==me.username?`<button class=fb onclick="followU('${p.user}')">${me.followingList.includes(p.user)?'Following':'Follow'}</button>`:''}</div>
- ${p.image?`<img class=pimg src="${esc(p.image)}" ondblclick="like('${p.id}')">`:`<div class=tbox style="background:linear-gradient(135deg,hsl(${hue(p.user)},60%,32%),hsl(${(hue(p.user)+60)%360},60%,22%))" ondblclick="like('${p.id}')">${esc(p.text)}</div>`}
- <div class=acts><button class=ic onclick="like('${p.id}')">${liked?'❤️':'🤍'}</button><button class=ic onclick="$('c${p.id}').focus()">💬</button><button class=ic onclick="share('${p.id}')">📤</button></div>
- <div class=lk><b>${p.likes.length} likes</b></div>${p.image&&p.text?`<div class=cap><b>${esc(p.user)}</b> ${esc(p.text)}</div>`:''}
+ ${p.image||p.hasImage?IMG('post',p,'pimg'):`<div class=tbox style="background:linear-gradient(135deg,hsl(${hue(p.user)},60%,32%),hsl(${(hue(p.user)+60)%360},60%,22%))" ondblclick="like('${p.id}')">${esc(p.text)}</div>`}
+ <div class=acts><button class=ic onclick="like('${p.id}')">${liked?'❤️':'🤍'}</button><button class=ic onclick="$('c${p.id}').focus()">💬</button><button class=ic onclick="share('${p.id}')">📤</button><button class=ic style="margin-left:auto" onclick="savePost('${p.id}')">${me.savedList.includes(p.id)?'⭐':'☆'}</button></div>
+ <div class=lk><b>${p.likes.length} likes</b></div>${(p.image||p.hasImage)&&p.text?`<div class=cap><b>${esc(p.user)}</b> ${esc(p.text)}</div>`:''}
  ${p.comments.map(c=>`<div class=cm><b>${esc(c.user)}</b> ${esc(c.text)}</div>`).join('')}
  <div class=cin><input id="c${p.id}" placeholder="Add a comment..."><button onclick="comment('${p.id}')">Post</button></div></div>`}).join('')||'<p class=mut style="text-align:center;padding:40px">No posts yet. Tap ＋ to share the first one!</p>';
  scrollTo(0,y)}
@@ -176,7 +204,7 @@ async function like(id){await api('posts/'+id+'/like','POST');loadFeed()}
 async function comment(id){const t=$('c'+id).value;if(!t.trim())return;await api('posts/'+id+'/comment','POST',{text:t});loadFeed()}
 let sv={};
 function openStory(u){sv={u,i:0};showStory()}
-function showStory(){const l=STORIES[sv.u]||[],s=l[sv.i];if(!s)return closeStory();clearTimeout(sv.t);$('sv').hidden=false;
+function showStory(){const l=STORIES[sv.u]||[],s=l[sv.i];if(!s)return closeStory();if(s.hasImage&&!s.image){return api('img/status/'+s.id).then(j=>{s.image=j.image;s.hasImage=false;showStory()}).catch(()=>{s.hasImage=false;showStory()})}clearTimeout(sv.t);$('sv').hidden=false;
  $('svh').innerHTML=av(sv.u,34)+'<b>'+esc(sv.u)+'</b><small>'+ago(s.time)+'</small>';
  $('svb').innerHTML=s.image?`<img src="${esc(s.image)}">`+(s.text?`<p class=cp>${esc(s.text)}</p>`:''):`<p class=big style="background:hsl(${hue(sv.u)},55%,30%)">${esc(s.text)}</p>`;
  $('svp').innerHTML=l.map((_,k)=>`<i class="${k<=sv.i?'on':''}"></i>`).join('');sv.t=setTimeout(()=>{sv.i++;showStory()},5000)}
@@ -189,11 +217,14 @@ async function follow(n){await api('follow/'+n,'POST');me=await api('me');loadPe
 /* CHAT */
 async function loadChats(){const c=await api('chats');if(chatWith)return openChat(chatWith);$('cbox').hidden=true;$('clist').hidden=false;
  $('clist').innerHTML='<h3 style="margin-top:14px">Chat</h3>'+(c.map(u=>`<div class=li onclick="openChat('${u}')">${av(u,46)}<div><b>${u}</b><br><small>Tap to chat</small></div></div>`).join('')||'<p class=mut>No chats yet — find people with 🔍</p>')}
-async function openChat(u){chatWith=u;if(tab!=='chat')return show('chat');$('clist').hidden=true;$('cbox').hidden=false;$('cname').innerHTML=av(u,30)+' <b>'+u+'</b>';$('msgs').innerHTML='';(await api('messages/'+u)).forEach(addMsg)}
+async function openChat(u){chatWith=u;if(tab!=='chat')return show('chat');$('clist').hidden=true;$('cbox').hidden=false;$('cname').innerHTML=av(u,30)+' <b>'+u+'</b>';$('msgs').innerHTML='';(await api('messages/'+u)).forEach(addMsg);banner()}
 function backChat(){chatWith=null;loadChats()}
-function addMsg(m){const d=document.createElement('div');d.className='m '+(m.from===me.username?'me':'');if(m.audio){const a=document.createElement('audio');a.controls=true;a.src=m.audio;d.appendChild(a)}else d.textContent=m.text;$('msgs').appendChild(d);$('msgs').scrollTop=1e9}
+function addMsg(m){const d=document.createElement('div');d.className='m '+(m.from===me.username?'me':'');if(m.audio){const a=document.createElement('audio');a.controls=true;a.src=m.audio;d.appendChild(a);if(m.lang||m.transcript){const t=document.createElement('div');t.style.cssText='font-size:12px;margin-top:4px;opacity:.85';t.textContent=(m.lang?'🌍 '+m.lang:'')+(m.transcript?' — “'+m.transcript+'”':'');d.appendChild(t)}}
+ else if(m.hasSnap){if(m.to===me.username){d.textContent='📸 Snap — tap to view';d.style.cursor='pointer';d.onclick=()=>viewSnap(m.id,d)}else d.textContent='📸 Snap sent'}
+ else if(m.viewed)d.textContent='📸 Snap opened';
+ else d.innerHTML=esc(m.text).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');$('msgs').appendChild(d);$('msgs').scrollTop=1e9}
 function sendDm(){const t=$('mt').value.trim();if(!t||!chatWith)return;sock.emit('dm',{to:chatWith,text:t});$('mt').value=''}
-function onDm(m){const o=m.from===me.username?m.to:m.from;if(tab==='chat'&&chatWith===o)addMsg(m);else if(m.to===me.username)toast('💬 '+m.from+': '+(m.text||'🎤 Voice message').slice(0,40))}
+function onDm(m){const o=m.from===me.username?m.to:m.from;if(tab==='chat'&&chatWith===o)addMsg(m);else if(m.to===me.username)toast('💬 '+m.from+': '+(m.text||(m.hasSnap?'📸 Snap':'🎤 Voice message')).slice(0,40))}
 /* VIDEO CALL */
 const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};let pc,peer,stream;
 function addIce(p,c){if(p.remoteDescription)p.addIceCandidate(c).catch(()=>{});else(p._q=p._q||[]).push(c)}
@@ -235,7 +266,10 @@ async function postStatus(){try{await api('status','POST',{text:$('st').value,im
 let map,markers=[],watchId=null,centered=false;
 function mkMap(el,z){const m=L.map(el,{worldCopyJump:true}).setView([9.07,7.4],z),earth=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles © Esri',maxZoom:18}),streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});earth.addTo(m);L.control.layers({'🌍 Earth':earth,'🗺️ Streets':streets}).addTo(m);return m}
 async function initMap(){if(!map){map=mkMap('map',5);drawLocs(lastLocs)}setTimeout(()=>map.invalidateSize(),50)}
-function drawLocs(v){lastLocs=v;if(!map)return;markers.forEach(m=>m.remove());markers=v.map(l=>L.marker([l.lat,l.lng]).addTo(map).bindTooltip('@'+l.user,{permanent:true}))}
+function drawLocs(v){lastLocs=v;redraw()}
+function redraw(){if(!map)return;markers.forEach(m=>m.remove());
+ const all=[...lastLocs.map(l=>({lat:l.lat,lng:l.lng,t:'@'+l.user})),...Object.values(FL).map(l=>({lat:l.lat,lng:l.lng,t:'📍 @'+l.from+' (chat)'})),...Object.values(SOSL).map(l=>({lat:l.lat,lng:l.lng,t:'🆘 @'+l.user,sos:1}))].filter(l=>isFinite(l.lat));
+ markers=all.map(l=>L.marker([l.lat,l.lng],l.sos?{icon:L.divIcon({html:'<div style="font-size:30px">🆘</div>',className:'',iconSize:[30,30]})}:{}).addTo(map).bindTooltip(l.t,{permanent:true}))}
 function toggleShare(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;sock.emit('loc:stop');$('sh').textContent='📍 Share my location';return}
  if(!navigator.geolocation)return toast('Location not supported on this device');
  watchId=navigator.geolocation.watchPosition(p=>{sock.emit('loc',{lat:p.coords.latitude,lng:p.coords.longitude});if(!centered){map.setView([p.coords.latitude,p.coords.longitude],14);centered=true}},
@@ -243,15 +277,51 @@ function toggleShare(){if(watchId!=null){navigator.geolocation.clearWatch(watchI
 /* SATELLITE */
 let omap,iss,otimer;
 async function initOrbit(){if(!omap){omap=mkMap('omap',2);iss=L.circleMarker([0,0],{radius:9,color:'#ff2bd6',fillOpacity:.7}).addTo(omap)}
- setTimeout(()=>omap.invalidateSize(),50);clearInterval(otimer);updIss();otimer=setInterval(()=>{if(tab==='orbit')updIss()},5000)}
+ setTimeout(()=>omap.invalidateSize(),50);clearInterval(otimer);updIss();otimer=setInterval(()=>{if(tab==='orbit')updIss()},LD()?30000:5000)}
 async function updIss(){try{const d=await fetch('https://api.wheretheiss.at/v1/satellites/25544').then(r=>r.json());
  iss.setLatLng([d.latitude,d.longitude]);omap.panTo([d.latitude,d.longitude]);
  $('oinfo').innerHTML=`Lat ${d.latitude.toFixed(2)}, Lng ${d.longitude.toFixed(2)}<br>Altitude ${d.altitude.toFixed(0)} km · Speed ${d.velocity.toFixed(0)} km/h`}catch{$('oinfo').textContent='Could not reach the satellite tracking service.'}}
+const LD=()=>localStorage.lowdata==='1',LDQ=()=>LD()?'?lite=1':'',BR=()=>LD()?16000:32000;
+let FL={},SOSL={},cShare=null,sosT=null,sosOn=false,sosW=null,sr=null,trs='';
+const IMG=(k,x,c)=>x.image?`<img class="${c}" src="${esc(x.image)}">`:x.hasImage?`<div class="ldp ${c}" onclick="ldImg(this,'${k}','${x.id}','${c}')">📷 Tap to load photo · ${x.kb} KB</div>`:'';
+async function ldImg(el,k,id,c){el.textContent='Loading…';try{const j=await api('img/'+k+'/'+id);el.outerHTML=`<img class="${c}" src="${esc(j.image)}">`}catch(e){el.textContent='Failed — tap to retry'}}
+function toggleLD(){localStorage.lowdata=LD()?'0':'1';toast(LD()?'Low data mode ON 📉':'Low data mode OFF');loadAv().then(loadSettings)}
+async function savePost(id){await api('save/'+id,'POST');me=await api('me');loadFeed()}
+async function loadSaved(){const ps=await api('saved'+LDQ());$('svlist').innerHTML=ps.map(p=>`<div class=post><div class=ph>${av(p.user)}<b>${esc(p.user)}</b></div>${p.image||p.hasImage?IMG('post',p,'pimg'):''}<div class=cap>${esc(p.text)}</div></div>`).join('')||'<p class=mut>Nothing saved yet — tap ☆ on a post.</p>'}
+async function loadMarket(){const ms=await api('market'+LDQ());$('mlist').innerHTML=ms.map(m=>`<div class="card">${IMG('market',m,'mimg')}<div class=row><b>${esc(m.title)}</b><b style="color:#16a34a">${esc(m.price)}</b></div><p>${esc(m.desc)}</p><div class=row><small>${av(m.user,22)} @${m.user}</small>${m.user===me.username?`<button onclick="delItem('${m.id}')">Delete</button>`:`<button class="blue" onclick="openChat('${m.user}')">💬 Chat to buy</button>`}</div></div>`).join('')||'<p class=mut>No items yet — be the first seller!</p>'}
+async function sell(){try{await api('market','POST',{title:$('mtt').value,price:$('mpr').value,desc:$('mds').value,image:await pickImg($('mim'))});['mtt','mpr','mds'].forEach(i=>$(i).value='');$('mim').value='';toast('Listed ✅');loadMarket()}catch(e){toast(e.message)}}
+async function delItem(id){if(confirm('Delete this listing?')){await api('market/'+id,'DELETE');loadMarket()}}
+async function sendSnap(i){const im=await pickImg(i);i.value='';if(im&&chatWith)sock.emit('dm',{to:chatWith,snap:im})}
+async function viewSnap(id,el){try{const j=await api('snap/'+id+'/view','POST');const v=document.createElement('div');v.style.cssText='position:fixed;inset:0;background:#000;z-index:70;display:flex;align-items:center;justify-content:center';
+ v.innerHTML=`<img src="${esc(j.image)}" style="max-width:100%;max-height:100%"><p style="position:absolute;top:20px;color:#fff;margin:0">📸 Disappears after you close it — tap to close</p>`;v.onclick=()=>v.remove();document.body.appendChild(v)}catch(e){toast(e.message)}el.textContent='📸 Snap opened';el.onclick=null}
+function startSR(lang){const R=window.SpeechRecognition||window.webkitSpeechRecognition;trs='';if(!R)return;try{sr=new R();sr.lang=lang;sr.continuous=true;sr.interimResults=false;
+ sr.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)trs+=e.results[i][0].transcript+' '};sr.onerror=()=>{};
+ sr.onend=()=>{if(rec&&rec.state==='recording')try{sr.start()}catch(e){}};sr.start()}catch(e){sr=null}}
+function banner(){const b=$('lbanner');if(!b)return;const f=chatWith&&FL[chatWith];b.hidden=!f;if(f)b.innerHTML='📍 @'+chatWith+' is sharing live location · <a href="#" onclick="show(\'map\');return false" style="color:#0095f6">View on map</a>';
+ if($('cls'))$('cls').textContent=cShare&&cShare.to===chatWith?'📍 ON':'📍'}
+function stopChatShare(){if(!cShare)return;navigator.geolocation.clearWatch(cShare.w);sock.emit('chatloc:stop',cShare.to);cShare=null}
+function toggleChatShare(){const to=chatWith;if(!to)return;if(cShare&&cShare.to===to){stopChatShare();banner();return toast('Stopped sharing your location')}
+ if(!navigator.geolocation)return toast('Location not supported on this device');if(!confirm('Share your live location with @'+to+' until you stop?'))return;stopChatShare();
+ cShare={to,w:navigator.geolocation.watchPosition(p=>sock.emit('chatloc',{to,lat:p.coords.latitude,lng:p.coords.longitude}),e=>toast('Location error: '+e.message),{enableHighAccuracy:true,maximumAge:5000})};banner();toast('Sharing live location with @'+to)}
+async function loadSos(){me=await api('me');$('tlist').innerHTML=me.trustedList.map(u=>`<div class=li style="cursor:default">${av(u,36)}<b style="flex:1">${u}</b><button onclick="trustU('${u}')">Remove</button></div>`).join('')||'<p class=mut>Add at least one person you trust.</p>';setSos()}
+async function trustU(n){try{await api('trusted/'+n,'POST');loadSos()}catch(e){toast(e.message)}}
+function addTrusted(){const n=$('tu').value.trim().toLowerCase();$('tu').value='';if(n)trustU(n)}
+function setSos(){$('sosb').textContent=sosOn?"I'M SAFE":'SOS';$('sosb').style.background=sosOn?'#16a34a':'#dc2626';$('sosst').textContent=sosOn?'🔴 SOS active — your trusted contacts can see your live location. Tap the button to stop.':''}
+function sosDown(){if(sosOn)return;$('sosst').textContent='Keep holding…';sosT=setTimeout(sosGo,2000)}
+function sosUp(){clearTimeout(sosT);if(!sosOn)$('sosst').textContent=''}
+function sosGo(){if(!me.trustedList.length)return toast('Add a trusted contact first');if(!navigator.geolocation)return toast('Location not supported on this device');navigator.vibrate&&navigator.vibrate(200);
+ sosW=navigator.geolocation.watchPosition(p=>{const d={lat:p.coords.latitude,lng:p.coords.longitude};if(!sosOn){sosOn=true;sock.emit('sos',d);setSos()}else sock.emit('sos:loc',d)},()=>toast('Turn on location to send SOS'),{enableHighAccuracy:true,maximumAge:3000})}
+function sosStop(){navigator.geolocation.clearWatch(sosW);sosOn=false;sock.emit('sos:stop');setSos()}
+function showSosAlert(d){let a=$('sosa');if(!a){a=document.createElement('div');a.id='sosa';a.style.cssText='position:fixed;inset:0;background:#b91c1c;color:#fff;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px';document.body.appendChild(a)}
+ a.innerHTML=`<div style="font-size:60px">🆘</div><h2>@${esc(d.user)} needs help!</h2><a style="color:#fff" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${d.lat},${d.lng}">📍 Open location in Google Maps</a><button onclick="$('sosa').remove();show('map')">View on Earth map</button><button onclick="$('sosa').remove();openChat('${esc(d.user)}')">💬 Chat</button><button onclick="$('sosa').remove()">Dismiss</button>`;navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}
+document.addEventListener('focusin',e=>{if(e.target.tagName==='INPUT')window.GS=.014;const g=$('guide'),i=e.target;if(!g||i.tagName!=='INPUT')return;g.classList.toggle('shy',i.type==='password');g.classList.toggle('lk',i.type!=='password'&&i.type!=='file')});
+document.addEventListener('focusout',()=>{window.GS=.004;const g=$('guide');g&&g.classList.remove('shy','lk')});
+setTimeout(()=>{const g=$('guide');g&&g.classList.remove('hi')},4500);
 let AV={};
-async function loadAv(){try{AV=await api('avatars')}catch(e){}}
+async function loadAv(){try{AV=LD()?{}:await api('avatars')}catch(e){}}
 function setHdr(){$('hav').innerHTML=av(me.username,26);$('who').textContent=me.username}
 function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;document.querySelector('meta[name=theme-color]').content=t==='light'?'#ffffff':'#000000';document.querySelectorAll('.thb').forEach(b=>b.classList.toggle('blue',b.dataset.th===t))}
-async function loadSettings(){me=await api('me');setHdr();applyTheme(localStorage.theme||'dark');
+async function loadSettings(){me=await api('me');setHdr();applyTheme(localStorage.theme||'dark');$('ldb').textContent=LD()?'📉 ON — tap to turn off':'📉 OFF — tap to turn on';
  $('sprof').innerHTML=av(me.username,64)+`<div><b>${esc(((me.firstName||'')+' '+(me.surname||'')).trim()||'@'+me.username)}</b><br><small>@${me.username}</small><br><small>${me.followers} followers · ${me.following} following</small></div>`;
  $('blist').innerHTML=me.blockedList.map(u=>`<div class=li style="cursor:default">${av(u,36)}<b style="flex:1">${u}</b><button onclick="blockU('${u}')">Unblock</button></div>`).join('')||'<p class=mut>No blocked accounts</p>'}
 async function setAvatar(i){try{const im=await pickImg(i,200);if(!im)return;await api('avatar','POST',{image:im});await loadAv();toast('Profile picture updated ✅');setHdr();loadSettings()}catch(e){toast(e.message)}}
@@ -261,7 +331,7 @@ async function blockU(n){try{const r=await api('block/'+n,'POST');me=await api('
  if(tab==='chat'){chatWith=null;loadChats()}else show(tab)}catch(e){toast(e.message)}}
 function heart(b){const h=document.createElement('span');h.className='fh';h.textContent='❤️';h.style.left=(10+Math.random()*70)+'%';b.appendChild(h);setTimeout(()=>h.remove(),1800)}
 function liveLike(){if(watching)sock.emit('live:like',watching)}
-function showAuth(v){$('login').hidden=v!=='login';$('signup').hidden=v!=='signup';$('aerr').textContent=$('serr').textContent=''}
+function showAuth(v){$('login').hidden=v!=='login';$('signup').hidden=v!=='signup';$('aerr').textContent=$('serr').textContent='';$('gtalk').textContent=v==='login'?'Welcome back! 👋 Log in to continue':'Let\'s get you set up — it only takes a minute ✨'}
 function togglePw(id,b){const i=$(id);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'}
 async function postAuth(path,body,err){try{const r=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error);token=localStorage.t=j.token;start()}catch(e){$(err).textContent=e.message}}
 function doLogin(){postAuth('login',{username:$('u').value,password:$('p').value},'aerr')}
@@ -276,16 +346,44 @@ async function share(id){const p=POSTS.find(x=>x.id===id);if(!p)return;const d={
 async function toggleRec(){if(rec&&rec.state==='recording'){rec.stop();return}const to=chatWith;if(!to)return;
  try{if(!window.MediaRecorder)throw new Error('Recording not supported on this browser');
   const st=await navigator.mediaDevices.getUserMedia({audio:true}),mt=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'].find(t=>MediaRecorder.isTypeSupported(t));
-  rec=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});chunks=[];
-  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  rec.onstop=()=>{clearInterval(recT);st.getTracks().forEach(t=>t.stop());$('mic').classList.remove('rec');$('mic').textContent='🎤';if(!chunks.length)return;
-   const fr=new FileReader();fr.onload=()=>sock.emit('dm',{to,audio:fr.result});fr.readAsDataURL(new Blob(chunks,{type:rec.mimeType||mt||'audio/webm'}))};
-  rec.start();recS=Date.now();$('mic').classList.add('rec');
+  rec=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:BR()}:{audioBitsPerSecond:BR()});chunks=[];
+  const LB=$('vl').value.split('|');rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{clearInterval(recT);st.getTracks().forEach(t=>t.stop());$('mic').classList.remove('rec');$('mic').textContent='🎤';sr&&sr.stop();if(!chunks.length)return;
+   const fr=new FileReader();fr.onload=()=>setTimeout(()=>sock.emit('dm',{to,audio:fr.result,lang:LB[1],transcript:trs.trim()}),800);fr.readAsDataURL(new Blob(chunks,{type:rec.mimeType||mt||'audio/webm'}))};
+  startSR(LB[0]);rec.start();recS=Date.now();$('mic').classList.add('rec');
   recT=setInterval(()=>{const s=Math.floor((Date.now()-recS)/1000);$('mic').textContent='⏹ '+s+'s';if(s>=60)rec.stop()},500)
  }catch(e){toast('Mic error: '+e.message)}}
 function stopEarth(){clearInterval(bgT);bg&&bg.remove();bg=null;$('earth').hidden=true}
-bg=L.map('earth',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false,attributionControl:false}).setView([15,10],2);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(bg);
-{let lon=10;bgT=setInterval(()=>{lon=(lon+.2)%360;bg.setView([15,lon>180?lon-360:lon],2,{animate:false})},70)}
+if(false)bg=L.map('earth',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false,attributionControl:false}).setView([15,10],2);
+if(bg)L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(bg);
+if(bg){let lon=10;bgT=setInterval(()=>{lon=(lon+.2)%360;bg.setView([15,lon>180?lon-360:lon],2,{animate:false})},70)}
+(function(){
+const ES=$('earth'),sc=ES.getContext('2d');ES.width=innerWidth;ES.height=innerHeight;
+for(let i=0;i<Math.min(160,innerWidth/3);i++){sc.globalAlpha=.3+Math.random()*.7;sc.fillStyle=['#fff','#bfe9ff','#ffe9b0'][i%3];sc.beginPath();sc.arc(Math.random()*ES.width,Math.random()*ES.height,Math.random()*1.4+.2,0,7);sc.fill()}
+if(!LD())$('wvid').src='welcome.mp4';
+const T=['💬 Chat in your own language','🆘 One-tap SOS keeps you safe','🛍️ Sell to buyers across Africa','📉 Low data mode saves your money','📍 Share your live location with people you trust'];let ti=0;
+const tk=()=>{const e=$('tick');if(!e||$('auth').hidden)return;e.style.opacity=0;setTimeout(()=>{e.textContent=T[ti++%T.length];e.style.opacity=1},300)};tk();setInterval(tk,2800);
+const cv=$('gb'),c=cv.getContext('2d'),W=cv.width,R=W*.4,cx=W/2,cy=W/2,D=Math.ceil(R*2),N=D*D,PI=Math.PI;
+const lat=new Float32Array(N),lon0=new Float32Array(N),sh=new Float32Array(N),ok=new Uint8Array(N);
+for(let j=0;j<D;j++)for(let i=0;i<D;i++){const x=(i-R)/R,y=(R-j)/R,r2=x*x+y*y,k=j*D+i;if(r2<=1){const z=Math.sqrt(1-r2);ok[k]=1;lat[k]=Math.asin(y);lon0[k]=Math.atan2(x,z);sh[k]=Math.pow(z,.3)}}
+let tex=null,rot=0,TW=512,TH=256;window.GS=.004;
+if(!LD()){const U=['https://unpkg.com/three-globe/example/img/earth-night.jpg','https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg'];let n=0;
+ const ld=()=>{if(n>=U.length)return;const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{try{const t=document.createElement('canvas');t.width=TW;t.height=TH;const g=t.getContext('2d');g.drawImage(im,0,0,TW,TH);tex=g.getImageData(0,0,TW,TH).data}catch(e){}};im.onerror=ld;im.src=U[n++]};ld()}
+const CI=[[6.5,3.4],[9.07,7.4],[-1.29,36.8],[5.6,-.19],[30,31.2],[-26.2,28],[14.7,-17.4],[-1.95,30.06],[9,38.7],[-4.3,15.3],[51.5,-.12],[40.7,-74],[25.2,55.3],[12,8.5],[-33.9,18.4]];
+const V=(la,lo)=>{la*=PI/180;lo=lo*PI/180-rot;return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]};
+const sl=(a,b,t)=>{const d=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),w=Math.acos(d)||1e-4,s=Math.sin(w),p=Math.sin((1-t)*w)/s,q=Math.sin(t*w)/s;return[p*a[0]+q*b[0],p*a[1]+q*b[1],p*a[2]+q*b[2]]};
+const arcs=Array.from({length:4},()=>({a:0,b:1,t:Math.random(),sp:.004+Math.random()*.004}));const pick=a=>{a.a=CI.length*Math.random()|0;a.b=(a.a+1+(CI.length-1)*Math.random()|0)%CI.length;a.t=0};arcs.forEach(pick);
+const img=c.createImageData(D,D),o=img.data;let fr=0;
+function frame(){if($('auth').hidden)return;requestAnimationFrame(frame);fr++;rot+=window.GS;c.clearRect(0,0,W,W);
+ let g=c.createRadialGradient(cx,cy,R*.9,cx,cy,R*1.3);g.addColorStop(0,'rgba(0,240,255,.35)');g.addColorStop(1,'rgba(0,240,255,0)');c.fillStyle=g;c.fillRect(0,0,W,W);
+ if(tex){for(let k=0;k<N;k++){if(!ok[k])continue;let u=((lon0[k]+rot)/(2*PI)+.5)%1;if(u<0)u+=1;const t=(((.5-lat[k]/PI)*TH|0)*TW+(u*TW|0))*4,s=sh[k],a=k*4;
+  o[a]=Math.min(255,tex[t]*1.6*s+10);o[a+1]=Math.min(255,tex[t+1]*1.6*s+24);o[a+2]=Math.min(255,tex[t+2]*1.6*s+52);o[a+3]=255}c.putImageData(img,cx-R,cy-R)}
+ else{g=c.createRadialGradient(cx-R*.3,cy-R*.3,R*.1,cx,cy,R);g.addColorStop(0,'#1e5a9c');g.addColorStop(1,'#07142e');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R,0,7);c.fill();c.strokeStyle='rgba(56,189,248,.35)';c.lineWidth=1;
+  for(let m=0;m<6;m++){const rx=Math.abs(Math.cos(m*PI/6+rot))*R;c.beginPath();c.ellipse(cx,cy,Math.max(rx,.5),R,0,0,7);c.stroke()}for(let l=-60;l<=60;l+=30){const y=Math.sin(l*PI/180)*R,w=Math.cos(l*PI/180)*R;c.beginPath();c.ellipse(cx,cy-y,w,w*.12,0,0,7);c.stroke()}}
+ for(const a of arcs){a.t+=a.sp;if(a.t>=1)pick(a);const A=V(...CI[a.a]),B=V(...CI[a.b]);c.lineWidth=1.2;let prev=null;
+  for(let i=0;i<=24;i++){const t=i/24,v=sl(A,B,t),h=1+.28*Math.sin(PI*t),X=cx+R*h*v[0],Y=cy-R*h*v[1];if(v[2]>0&&prev){c.strokeStyle='rgba(0,240,255,.35)';c.beginPath();c.moveTo(prev[0],prev[1]);c.lineTo(X,Y);c.stroke()}prev=v[2]>0?[X,Y]:null}
+  const v=sl(A,B,a.t),h=1+.28*Math.sin(PI*a.t);if(v[2]>0){c.fillStyle='#fffc00';c.shadowColor='#fffc00';c.shadowBlur=10;c.beginPath();c.arc(cx+R*h*v[0],cy-R*h*v[1],2.6,0,7);c.fill();c.shadowBlur=0}}
+ CI.forEach((p,i)=>{const v=V(...p);if(v[2]<=.05)return;const X=cx+R*v[0],Y=cy-R*v[1],ph=((fr+i*13)%60)/60;c.strokeStyle=`rgba(255,252,0,${1-ph})`;c.beginPath();c.arc(X,Y,2+ph*9,0,7);c.stroke();c.fillStyle='#fff7a8';c.beginPath();c.arc(X,Y,2.2,0,7);c.fill()})}
+frame()})();
 start();
 </script></body></html>
