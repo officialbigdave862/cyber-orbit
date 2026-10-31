@@ -359,7 +359,22 @@ if(bg)L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Im
 if(bg){let lon=10;bgT=setInterval(()=>{lon=(lon+.2)%360;bg.setView([15,lon>180?lon-360:lon],2,{animate:false})},70)}
 (function(){
 const ES=$('earth'),sc=ES.getContext('2d');ES.width=innerWidth;ES.height=innerHeight;
-for(let i=0;i<Math.min(160,innerWidth/3);i++){sc.globalAlpha=.3+Math.random()*.7;sc.fillStyle=['#fff','#bfe9ff','#ffe9b0'][i%3];sc.beginPath();sc.arc(Math.random()*ES.width,Math.random()*ES.height,Math.random()*1.4+.2,0,7);sc.fill()}
+let SW=ES.width,SH=ES.height;addEventListener('resize',()=>{ES.width=SW=innerWidth;ES.height=SH=innerHeight});
+const ST=Array.from({length:LD()?90:Math.min(280,innerWidth/2.2|0)},(_,i)=>{const r=Math.pow(Math.random(),.6)*.75+.03;return{r,a:(i%3)*2.0944+r*5+(Math.random()-.5)*.7,z:Math.random()*1.4+.25,c:['#fff','#bfe9ff','#ffe9b0','#e6c7ff'][i%4],tw:Math.random()*6}});
+let gr=0;
+function sat(x,y,k,ang,t){sc.save();sc.translate(x,y);sc.rotate(ang);sc.scale(k,k);
+ for(const d of[-1,1]){sc.save();sc.scale(d,1);sc.fillStyle='#1d4ed8';sc.strokeStyle='#93c5fd';sc.lineWidth=.8;sc.fillRect(14,-9,34,18);sc.strokeRect(14,-9,34,18);
+  for(let i=1;i<4;i++){sc.beginPath();sc.moveTo(14+i*8.5,-9);sc.lineTo(14+i*8.5,9);sc.stroke()}sc.beginPath();sc.moveTo(14,0);sc.lineTo(48,0);sc.stroke();sc.fillStyle='#9ca3af';sc.fillRect(8,-1.5,6,3);sc.restore()}
+ const g=sc.createLinearGradient(-12,-12,12,12);g.addColorStop(0,'#fde68a');g.addColorStop(.5,'#d9a441');g.addColorStop(1,'#92400e');sc.fillStyle=g;sc.fillRect(-12,-11,24,22);sc.strokeStyle='rgba(255,255,255,.5)';sc.strokeRect(-12,-11,24,22);
+ sc.fillStyle='#e5e7eb';sc.beginPath();sc.ellipse(0,-17,9,4,0,0,7);sc.fill();sc.strokeStyle='#cbd5e1';sc.beginPath();sc.moveTo(0,-13);sc.lineTo(0,-11);sc.moveTo(0,11);sc.lineTo(0,19);sc.stroke();
+ const lc=Math.sin(t/260)>0?'#ff3b3b':'#2cff7a';sc.fillStyle=lc;sc.shadowColor=lc;sc.shadowBlur=8;sc.beginPath();sc.arc(0,19,2,0,7);sc.fill();sc.restore()}
+function sky(t){if($('auth').hidden||ES.hidden)return;requestAnimationFrame(sky);gr+=.0006;sc.clearRect(0,0,SW,SH);
+ const cx=SW/2,cy=SH*.38,M=Math.max(SW,SH)*.75;let g=sc.createRadialGradient(cx,cy,0,cx,cy,M*.6);g.addColorStop(0,'rgba(120,80,255,.25)');g.addColorStop(.5,'rgba(40,90,200,.10)');g.addColorStop(1,'rgba(0,0,0,0)');sc.fillStyle=g;sc.fillRect(0,0,SW,SH);
+ for(const s of ST){const a=s.a+gr*(1.2-s.r);sc.globalAlpha=.35+.65*Math.abs(Math.sin(t/900+s.tw));sc.fillStyle=s.c;sc.beginPath();sc.arc(cx+Math.cos(a)*s.r*M,cy+Math.sin(a)*s.r*M*.62,s.z,0,7);sc.fill()}
+ const P=q=>[-90+q*(SW+180),SH*.17+Math.sin(q*6.28)*SH*.05],p=(t/32000)%1,[X,Y]=P(p);
+ for(let i=1;i<=14;i++){const[tx,ty]=P(p-i*.004);sc.globalAlpha=.4*(1-i/14);sc.fillStyle='#9fe8ff';sc.beginPath();sc.arc(tx,ty,1.6,0,7);sc.fill()}
+ sc.globalAlpha=1;sat(X,Y,Math.min(1.1,SW/360),Math.cos(p*6.28)*.25-.15,t)}
+requestAnimationFrame(sky);
 if(!LD())$('wvid').src='welcome.mp4';
 const T=['💬 Chat in your own language','🆘 One-tap SOS keeps you safe','🛍️ Sell to buyers across Africa','📉 Low data mode saves your money','📍 Share your live location with people you trust'];let ti=0;
 const tk=()=>{const e=$('tick');if(!e||$('auth').hidden)return;e.style.opacity=0;setTimeout(()=>{e.textContent=T[ti++%T.length];e.style.opacity=1},300)};tk();setInterval(tk,2800);
