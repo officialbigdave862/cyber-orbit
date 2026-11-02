@@ -1,0 +1,538 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="/manifest.json"><link rel="apple-touch-icon" href="/icon-192.png"><title>Cyber World</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0;background:#000;color:#fff;font:14px -apple-system,Segoe UI,Roboto,sans-serif;padding:56px 0 64px}
+.grad{background:linear-gradient(45deg,#fffc00,#fa7e1e,#d62976,#962fbf);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+header{position:fixed;top:0;left:0;right:0;height:52px;background:#000;border-bottom:1px solid #262626;display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:20}
+header h2{margin:0;font-size:22px;font-style:italic}header span button{font-size:20px;padding:4px 8px}
+main{max-width:470px;margin:auto;padding:0 0 10px}
+section>*:not(.stories):not(.post){margin-left:10px;margin-right:10px}
+.card{background:#121212;border:1px solid #262626;border-radius:12px;padding:12px;margin-top:10px;margin-bottom:10px}
+.card img,.card video{max-width:100%;border-radius:8px}
+input,textarea{background:#121212;color:#fff;border:1px solid #363636;border-radius:10px;padding:10px;width:100%;font:inherit;outline:0}
+button{background:#262626;color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit;font-weight:600}
+button.blue{background:#0095f6}button.yel{background:#fffc00;color:#000}
+.pink{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:#fff}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px;justify-content:space-between}.row input{flex:1}
+.mut,small{color:#a8a8a8}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;flex:none;color:#fff}
+.stories{display:flex;gap:14px;overflow-x:auto;padding:12px 10px;border-bottom:1px solid #262626}
+.st{display:flex;flex-direction:column;align-items:center;gap:4px;width:68px;flex:none;cursor:pointer}.st small{max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ring{position:relative;padding:3px;border-radius:50%;background:conic-gradient(#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5,#feda75);display:inline-flex}
+.ring .av{border:3px solid #000}.ring.add{background:#363636}
+.ring.add b{position:absolute;right:-2px;bottom:-2px;background:#0095f6;border:2px solid #000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.post{border-bottom:1px solid #262626;padding-bottom:8px;margin-bottom:6px}
+.ph{display:flex;align-items:center;gap:9px;padding:10px}.ph small{margin-left:2px}
+.pimg{width:100%;display:block;max-height:560px;object-fit:cover}
+.tbox{padding:40px 20px;text-align:center;font-size:20px;font-weight:600;min-height:200px;display:flex;align-items:center;justify-content:center;word-break:break-word}
+.acts{padding:6px 8px;display:flex;gap:2px}.ic{background:none;font-size:24px;padding:4px 8px}
+.lk,.cap,.cm{padding:0 12px;margin-top:3px}
+.cin{display:flex;gap:6px;padding:8px 12px 0}.cin button{background:none;color:#0095f6}
+.li{display:flex;align-items:center;gap:12px;padding:10px 4px;cursor:pointer;border-bottom:1px solid #1a1a1a}
+.chead{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #262626}.chead b{flex:1}
+#msgs{height:calc(100vh - 230px);overflow:auto;padding:6px 0}
+.m{max-width:75%;padding:9px 13px;border-radius:20px;margin:4px 0;background:#262626;word-break:break-word;width:fit-content}
+.m.me{margin-left:auto;background:linear-gradient(45deg,#0095f6,#8a3ab9)}
+nav{position:fixed;bottom:0;left:0;right:0;height:56px;background:#000;border-top:1px solid #262626;display:flex;justify-content:space-around;align-items:center;z-index:20}
+nav button{background:none;font-size:26px;opacity:.5;padding:6px 14px}nav button.on{opacity:1}
+nav button.mid{background:#fffc00;opacity:1;border-radius:14px;font-size:22px;padding:6px 18px}
+#map,#omap{height:380px;border-radius:12px;margin:0 10px}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:9px 16px;border-radius:20px;z-index:99;display:none;font-weight:600}
+#call{position:fixed;inset:0;background:#000e;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+#call video{max-width:90vw;max-height:40vh;background:#111;border-radius:10px}
+#sv{position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column;max-width:470px;margin:auto}
+#svp{display:flex;gap:4px;padding:10px}#svp i{flex:1;height:3px;background:#555;border-radius:2px}#svp i.on{background:#fff}
+#svh{display:flex;align-items:center;gap:8px;padding:0 12px 10px}
+#svb{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}#svb img{max-width:100%;max-height:100%}
+.big{margin:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:30px;font-size:26px;font-weight:700;text-align:center;word-break:break-word}
+.cp{position:absolute;bottom:30px;left:0;right:0;text-align:center;background:#0009;padding:10px;margin:0}
+.tap{position:absolute;top:0;bottom:0;width:50%}
+#auth{max-width:340px;margin:12vh auto;padding:16px;text-align:center}#auth input{margin:6px 0}#auth h1{font-size:40px;font-style:italic;margin:0 0 6px}
+#authbg{position:fixed;inset:0;background:radial-gradient(circle at 50% 20%,#2a0a4a,#000 70%);z-index:-1}
+input,textarea{font-size:16px}
+body{padding-top:calc(56px + env(safe-area-inset-top));padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+header{height:calc(52px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
+nav{height:calc(56px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
+main{width:100%}@media(min-width:700px){main{max-width:560px}}
+#msgs{height:calc(100vh - 250px);height:calc(100dvh - 250px)}
+#map,#omap{height:min(420px,62vh)}button{min-height:38px}img,video{max-width:100%}
+#earth{position:fixed;inset:0;z-index:-2}#authbg{background:linear-gradient(#000b,#000e)}
+#auth{max-height:100vh;overflow:auto}
+.mic.rec{background:#e0245e;animation:p 1s infinite}@keyframes p{50%{opacity:.6}}
+audio{height:36px;max-width:100%}.fb{background:none;color:#0095f6;padding:2px 8px;margin-left:auto}
+#wbox,#hbox{position:relative}.fh{position:absolute;bottom:60px;font-size:28px;animation:fl 1.8s forwards;pointer-events:none}@keyframes fl{to{transform:translateY(-220px);opacity:0}}
+@media(max-width:380px){#who{display:none}}#hav .av{vertical-align:middle}
+[data-theme=light] body{background:#fff;color:#000}
+[data-theme=light] header,[data-theme=light] nav{background:#fff;border-color:#dbdbdb}
+[data-theme=light] .card,[data-theme=light] input,[data-theme=light] textarea{background:#fafafa;color:#000;border-color:#dbdbdb}
+[data-theme=light] button{background:#efefef;color:#000}
+[data-theme=light] button.blue{background:#0095f6;color:#fff}[data-theme=light] button.yel{background:#fffc00;color:#000}
+[data-theme=light] .pink{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:#fff}
+[data-theme=light] .mut,[data-theme=light] small{color:#737373}
+[data-theme=light] .post,[data-theme=light] .stories,[data-theme=light] .li,[data-theme=light] .chead{border-color:#dbdbdb}
+[data-theme=light] .m{background:#efefef;color:#000}[data-theme=light] .m.me{background:linear-gradient(45deg,#0095f6,#8a3ab9);color:#fff}
+[data-theme=light] nav button,[data-theme=light] .ic,[data-theme=light] .cin button,[data-theme=light] .fb,[data-theme=light] header span button{background:none}
+[data-theme=light] .cin button,[data-theme=light] .fb{color:#0095f6}
+[data-theme=light] nav button.mid{background:#fffc00}[data-theme=light] .ring .av{border-color:#fff}[data-theme=light] .ring.add{background:#dbdbdb}
+#sv button,#call button.pink{color:#fff}#sv button{background:none}
+.err{color:#ff6b6b;min-height:18px;margin:6px 0}#auth .pw{position:relative;margin:6px 0}#auth .pw input{margin:0;padding-right:46px}
+#auth .pw button{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;min-height:0;padding:6px 10px}[data-theme=light] #auth .pw button{background:none}
+select{background:#121212;color:#fff;border:1px solid #363636;border-radius:8px;padding:6px;font-size:14px;max-width:60%}
+[data-theme=light] select{background:#fafafa;color:#000;border-color:#dbdbdb}
+.ldp{background:#1a1a1a;color:#a8a8a8;padding:36px 10px;text-align:center;cursor:pointer;border-radius:8px}[data-theme=light] .ldp{background:#efefef}
+.mimg{width:100%;border-radius:8px;max-height:300px;object-fit:cover}
+nav button{padding:6px 8px}
+#sosb{width:150px;height:150px;border-radius:50%;background:#dc2626;color:#fff;font-size:34px;font-weight:800;border:6px solid #fecaca;margin:10px auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation;box-shadow:0 0 30px #dc2626aa}
+#guide{display:block;margin:0 auto;animation:br 4s ease-in-out infinite}@keyframes br{50%{transform:translateY(3px)}}
+#guide #head{transform-origin:100px 130px;transition:transform .4s}#guide.lk #head{transform:rotate(3deg)}#guide.lk #pup{transform:translate(0,3px)}
+#guide #hands ellipse{transition:transform .45s ease}#guide.shy #hands ellipse{transform:translateY(-78px)}
+#guide .lid ellipse{transform-box:fill-box;transform-origin:center;transform:scaleY(0);animation:bl 4s infinite}@keyframes bl{0%,94%,100%{transform:scaleY(0)}97%{transform:scaleY(1)}}
+#guide.hi #rh{animation:wv .9s ease-in-out 4}@keyframes wv{50%{transform:translate(10px,-38px) rotate(20deg)}}
+#tick{transition:opacity .3s}#earth{background:radial-gradient(circle at 50% 30%,#1b1050,#05030f 70%)}
+#authbg{background:transparent!important}
+#login,#signup{background:rgba(8,10,30,.55);border-radius:16px;padding:4px 14px 14px;backdrop-filter:blur(3px)}
+body.day #auth h1{filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}body.day #tick,body.day #gtalk{color:#fff;font-weight:600;text-shadow:0 1px 4px #000a}
+#dn{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:30;display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:20px;min-height:0;font-size:16px}
+#dn i{width:38px;height:20px;background:#3b3b6c;border-radius:10px;position:relative;display:block}#dn b{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .25s}
+body.day #dn b{left:20px}body.day #dn i{background:#f59e0b}
+.fp{background:#18191a;border-radius:12px;margin:10px 8px;padding-bottom:6px;overflow:hidden}[data-theme=light] .fp{background:#fff;box-shadow:0 1px 3px #0003}
+.fp .ph{padding:10px 12px}video.pimg{object-fit:contain;background:#000}
+.cnt{display:flex;justify-content:space-between;padding:6px 12px;color:#a8a8a8;font-size:13px}
+.abar{display:flex;border-top:1px solid #2f3031;border-bottom:1px solid #2f3031;margin:0 8px}[data-theme=light] .abar{border-color:#e4e6eb}
+.ab{flex:1;background:none!important;color:inherit;font-weight:600;padding:8px 2px;border-radius:6px;font-size:13px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.fbb{background:none;color:#0095f6;padding:2px 8px}.vm{display:block;padding:4px 12px;color:#a8a8a8;cursor:pointer;font-size:13px}
+.cbtn{flex:1;text-align:left;background:#3a3b3c;color:#b0b3b8;border-radius:20px;padding:10px 14px}[data-theme=light] .cbtn{background:#f0f2f5;color:#65676b}
+.rpick{position:absolute;z-index:80;background:#242526;border-radius:30px;padding:4px 8px;display:flex;gap:2px;box-shadow:0 4px 16px #000a}.rpick button{background:none;font-size:26px;padding:2px 5px;min-height:0}
+.reels{height:calc(100vh - 108px);height:calc(100dvh - 108px);overflow-y:auto;scroll-snap-type:y mandatory;margin:0!important}
+.reel{height:100%;scroll-snap-align:start;position:relative;background:#000;display:flex;align-items:center;justify-content:center}.reel video{max-width:100%;max-height:100%}
+.rinfo{position:absolute;left:12px;bottom:18px;right:80px;text-shadow:0 1px 4px #000;color:#fff}.rside{position:absolute;right:10px;bottom:30px;display:flex;flex-direction:column;gap:12px}
+.rside button{background:#0008;color:#fff;border-radius:50%;width:52px;height:52px;font-size:22px;padding:0;line-height:1.1}
+.new{background:#22c55e;color:#000;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700}nav{overflow-x:auto}
+.chip{display:inline-block;background:#262626;border-radius:12px;padding:2px 8px;margin:2px;font-size:12px}[data-theme=light] .chip{background:#efefef}#hubtabs button{white-space:nowrap}
+</style></head><body>
+<canvas id="earth"></canvas><div id="authbg"></div><div id="toast"></div>
+<button id="dn" onclick="toggleSky()" title="Switch night / day"><span>🌙</span><i><b></b></i><span>☀️</span></button>
+<div id="auth"><canvas id="gb" width="250" height="250" style="display:block;margin:0 auto;max-width:100%"></canvas>
+<video id="wvid" autoplay muted loop playsinline hidden onloadeddata="this.hidden=false" onerror="this.hidden=true" style="width:96px;height:96px;object-fit:cover;border-radius:50%;border:3px solid #fffc00;margin:2px auto 6px"></video>
+<h1 class="grad">Cyber World</h1><p id="tick" class="mut" style="margin:0 0 2px;min-height:18px"></p><p id="gtalk" class="mut">Welcome back! 👋 Log in to continue</p>
+<div id="login"><h3 style="margin:10px 0">Log in</h3>
+<input id="u" placeholder="Email or username" autocapitalize="off" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+<div class="pw"><input id="p" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" onclick="togglePw('p',this)">👁</button></div>
+<p id="aerr" class="err"></p><button class="blue" style="width:100%" onclick="doLogin()">Log in</button>
+<p class="mut" style="margin:6px 0"><a onclick="showAuth('forgot')" style="color:#0095f6;cursor:pointer">Forgot password?</a></p><p class="mut">New here?</p><button class="yel" style="width:100%" onclick="showAuth('signup')">Create new account</button></div>
+<div id="signup" hidden><h3 style="margin:10px 0">Create account</h3>
+<input id="fn" placeholder="First name" autocomplete="given-name"><input id="sn" placeholder="Surname" autocomplete="family-name">
+<label class="mut" style="display:block;text-align:left;font-size:12px">Date of birth (private, 13+ only)</label><input id="dob" type="date">
+<input id="su" placeholder="Choose a username" autocapitalize="off" autocomplete="username"><input id="se" type="email" placeholder="Email address" autocomplete="email">
+<div class="pw"><input id="sp" type="password" placeholder="Password (6+ characters)" autocomplete="new-password"><button type="button" onclick="togglePw('sp',this)">👁</button></div>
+<div class="pw"><input id="sp2" type="password" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()"><button type="button" onclick="togglePw('sp2',this)">👁</button></div>
+<p id="serr" class="err"></p><button class="yel" style="width:100%" onclick="doSignup()">Sign up</button>
+<p class="mut">Already have an account?</p><button style="width:100%" onclick="showAuth('login')">Back to log in</button></div>
+<div id="forgot" hidden><h3 style="margin:10px 0">Reset password</h3><input id="fe" type="email" placeholder="Your account email"><button class="blue" style="width:100%;margin-top:6px" onclick="sendCode()">Send me a code</button><input id="fc" placeholder="6-digit code" inputmode="numeric" style="margin-top:6px">
+<div class="pw"><input id="fp2" type="password" placeholder="New password (6+ characters)" autocomplete="new-password"><button type="button" onclick="togglePw('fp2',this)">👁</button></div><p id="ferr" class="err"></p><button class="yel" style="width:100%" onclick="doReset()">Reset password</button><p class="mut"></p><button style="width:100%" onclick="showAuth('login')">Back to log in</button></div></div>
+<div id="app" hidden>
+<header><h2 class="grad">Cyber World</h2><span><button onclick="show('map')">🌍</button><button onclick="show('sos')">🆘</button><button onclick="show('settings')" style="display:inline-flex;align-items:center;gap:6px"><span id="hav"></span><small id="who"></small>⚙️</button></span></header>
+<main>
+<section id="s-feed"><div id="composer"></div><div id="stories" class="stories"></div><div id="posts"></div></section>
+<section id="s-people" hidden><div style="padding-top:10px"><input id="q" placeholder="🔍 Search people" oninput="loadPeople()"></div><div id="plist"></div></section>
+<section id="s-create" hidden><div class="card"><b>Create</b><textarea id="ct" rows="4" placeholder="What's on your mind?" style="margin-top:8px"></textarea>
+<img id="prev" hidden style="width:100%;margin-top:8px;border-radius:10px">
+<div class="row"><label class="mut" style="cursor:pointer">📷 Add photo<input type="file" id="ci" accept="image/*" hidden onchange="prev(this)"></label><label class="mut" style="cursor:pointer">🎥 Add video<input type="file" id="cvid" accept="video/*" hidden onchange="vprev(this)"></label></div>
+<small id="vinfo" class="mut"></small><div class="row"><label class="mut"><input type="checkbox" id="cap"> ⏳ Time capsule — hide until</label><input type="datetime-local" id="capt" style="flex:none;width:200px"></div>
+<div class="row"><button class="blue" style="flex:1" onclick="doPost(false)">Share to Feed</button><button class="yel" style="flex:1" onclick="doPost(true)">Add to Story</button></div></div></section>
+<section id="s-chat" hidden><div id="clist"></div>
+<div id="cbox" hidden><div class="chead"><button onclick="backChat()">←</button><span id="cname"></span><button onclick="startCall(chatWith)">📹</button><button id="cls" onclick="toggleChatShare()">📍</button><button onclick="askBlock(chatWith)">🚫</button></div><div id="lbanner" class="mut" hidden style="padding:6px 0"></div><div id="msgs"></div>
+<div class="row" style="margin-top:4px"><small>🌍 Voice note language</small><select id="vl"><option value="en-NG|Nigerian Pidgin">Nigerian Pidgin</option><option value="en-NG|English">English</option><option value="ha-NG|Hausa">Hausa</option><option value="yo-NG|Yoruba">Yoruba</option><option value="ig-NG|Igbo">Igbo</option><option value="sw-KE|Swahili">Swahili</option><option value="zu-ZA|Zulu">Zulu</option><option value="am-ET|Amharic">Amharic</option><option value="fr-FR|French">French</option></select></div>
+<div class="row"><button class="mic" id="mic" onclick="toggleRec()">🎤</button><label class="ic" style="cursor:pointer;font-size:22px">📸<input type="file" accept="image/*" hidden onchange="sendSnap(this)"></label><input id="mt" placeholder="Send a chat" onkeydown="if(event.key==='Enter')sendDm()"><button class="blue" onclick="sendDm()">Send</button></div></div></section>
+<section id="s-settings" hidden>
+<div class="card" id="sprof" style="display:flex;gap:12px;align-items:center"></div>
+<div class="card"><b>Profile picture</b><div class="row"><label class="mut" style="cursor:pointer">📷 Choose a new photo<input type="file" accept="image/*" hidden onchange="setAvatar(this)"></label></div></div>
+<div class="card"><b>✏️ Edit profile</b><input id="pfn" placeholder="First name" style="margin-top:8px"><input id="psn" placeholder="Surname" style="margin-top:6px"><input id="pun" placeholder="Username" autocapitalize="off" style="margin-top:6px"><input id="pem" type="email" placeholder="Email (for login & password reset)" style="margin-top:6px"><textarea id="pbio" rows="2" maxlength="160" placeholder="Bio (optional)" style="margin-top:6px"></textarea>
+<small class="mut">Your username can be changed once every 7 days.</small><div class="row"><button class="blue" onclick="saveProfile()" style="flex:1">Save changes</button></div></div>
+<div class="card"><b>📉 Low data mode</b><p class="mut" style="margin:6px 0">Photos load only when you tap them, uploads are shrunk, and the Earth background is off. Saves mobile data.</p><button id="ldb" onclick="toggleLD()" style="width:100%"></button><p id="dsv" class="mut" style="margin:8px 0 0"></p></div>
+<div class="card row"><button onclick="show('saved')" style="flex:1">⭐ Saved posts</button><button onclick="show('orbit')" style="flex:1">🛰️ Satellite tracker</button></div>
+<div class="card"><b>Theme</b><div class="row"><button class="thb" data-th="dark" onclick="applyTheme('dark')" style="flex:1">🌙 Dark</button><button class="thb" data-th="light" onclick="applyTheme('light')" style="flex:1">☀️ Light</button></div></div>
+<div class="card"><b>🔒 Security</b><input id="op" type="password" placeholder="Current password" style="margin-top:8px"><input id="np" type="password" placeholder="New password (6+ characters)" style="margin-top:6px">
+<div class="row"><button class="blue" onclick="chPw()">Change password</button><button class="pink" onclick="logout()">Log out</button></div></div>
+<div class="card"><b>🚫 Blocked accounts</b><div class="row"><input id="bu" placeholder="Username to block"><button onclick="askBlock($('bu').value.trim().toLowerCase())">Block</button></div><div id="blist"></div></div>
+<div class="card"><b>⚠️ Delete account</b><p class="mut" style="margin:6px 0">Permanently deletes your profile, posts, messages and data.</p><input id="dpw" type="password" placeholder="Enter your password to confirm"><button class="pink" style="width:100%;margin-top:8px" onclick="delAccount()">Delete my account</button></div></section>
+<section id="s-hub" hidden><div class="card"><b>💚 Daily check-in</b><div id="moodbox"></div></div>
+<div class="row" id="hubtabs" style="overflow-x:auto;justify-content:flex-start;gap:6px"><button data-h="alerts" onclick="hubTab('alerts')">⚡ Alerts</button><button data-h="prices" onclick="hubTab('prices')">💰 Prices</button><button data-h="blood" onclick="hubTab('blood')">🩸 Blood</button><button data-h="circles" onclick="hubTab('circles')">🔄 Circles</button><button data-h="market" onclick="hubTab('market')">🛍️ Market</button></div><div id="hubbody"></div></section>
+<section id="s-profile" hidden><div class="row" style="margin-top:10px"><button onclick="show('feed')">←</button></div><div id="pf"></div></section>
+<section id="s-reels" hidden><div id="reels" class="reels"></div></section>
+<section id="s-sos" hidden><div class="card" style="text-align:center"><b>🆘 Safety</b><p class="mut">Press and hold the button for 2 seconds. Your trusted contacts get an alert and your live location until you tap again.</p>
+<button id="sosb" onpointerdown="sosDown()" onpointerup="sosUp()" onpointerleave="sosUp()" onclick="if(sosOn)sosStop()" oncontextmenu="return false">SOS</button><p id="sosst" class="mut"></p></div>
+<div class="card"><b>🚶 Safe Walk timer</b><p class="mut" style="margin:6px 0">Walking home or travelling? Start a timer. If you don't tap “I arrived safe” in time, your trusted contacts are alerted automatically with your last location — even if your phone dies.</p>
+<div class="row"><select id="wm"><option value="10">10 min</option><option value="20">20 min</option><option value="30" selected>30 min</option><option value="60">1 hour</option><option value="120">2 hours</option></select><button class="blue" id="wb" onclick="walkToggle()">Start Safe Walk</button></div><p id="wst" class="mut"></p></div>
+<div class="card"><b>Trusted contacts (max 5)</b><div class="row"><input id="tu" placeholder="Username"><button class="blue" onclick="addTrusted()">Add</button></div><div id="tlist"></div></div></section>
+<section id="s-market" hidden><div class="card"><b>🛍️ Marketplace</b><p class="mut">Sell anything — add a photo and a price. Buyers chat with you directly.</p>
+<input id="mtt" placeholder="What are you selling?"><input id="mpr" placeholder="Price (e.g. ₦5,000)" style="margin-top:6px"><textarea id="mds" rows="2" placeholder="Description" style="margin-top:6px"></textarea>
+<div class="row"><label class="mut" style="cursor:pointer">📷 Add photo<input type="file" id="mim" accept="image/*" hidden></label><button class="blue" onclick="sell()">List item</button></div></div><div id="mlist"></div></section>
+<section id="s-saved" hidden><h3 style="margin-top:14px">⭐ Saved posts</h3><div id="svlist"></div></section>
+<section id="s-live" hidden><div class="card" id="hbox"><div id="hstat" class="mut"></div><button class="pink" style="width:100%" id="gl" onclick="toggleLive()">🔴 Go Live</button>
+<video id="lv" autoplay muted playsinline hidden style="width:100%;margin-top:8px"></video></div>
+<h3>Live now</h3><div id="lives"></div>
+<div id="wbox" class="card" hidden><div class="row"><b id="wname"></b><span id="vstat" class="mut"></span><button class="pink" onclick="liveLike()">❤️</button><button onclick="stopWatch()">Leave</button></div>
+<video id="wv" autoplay playsinline style="width:100%"></video><div id="lchat" style="max-height:140px;overflow:auto"></div>
+<div class="row"><input id="lt" placeholder="Say something..." onkeydown="if(event.key==='Enter')liveChat()"><button class="blue" onclick="liveChat()">Send</button></div></div></section>
+<section id="s-map" hidden><div class="card"><button class="blue" id="sh" onclick="toggleShare()">📍 Share my location</button>
+<p class="mut">You see yourself and people you follow who are sharing. Sharing stops when you turn it off.</p></div><div id="map"></div></section>
+<section id="s-orbit" hidden><div class="card"><b>🛰️ Live satellite tracker (ISS)</b><div id="oinfo" class="mut">Loading...</div></div><div id="omap"></div>
+<div class="card mut"><b>About free internet:</b> a website can't link to a satellite or give free internet by itself — that needs satellite hardware and a provider. This page tracks a real satellite live.</div></section>
+</main>
+<nav><button data-t="feed" onclick="show('feed')">🏠</button><button data-t="people" onclick="show('people')">🔍</button><button data-t="reels" onclick="show('reels')">🎬</button><button class="mid" data-t="create" onclick="show('create')">＋</button><button data-t="chat" onclick="chatWith=null;show('chat')">💬</button><button data-t="hub" onclick="show('hub')">🤝</button><button data-t="live" onclick="show('live')">🔴</button></nav>
+<div id="call" hidden><video id="rv" autoplay playsinline></video><video id="cv" autoplay muted playsinline style="max-height:20vh"></video><button class="pink" onclick="endCall()">Hang up</button></div>
+<div id="sv" hidden><div id="svp"></div><div id="svh"></div><div id="svb"></div>
+<div style="position:absolute;inset:0;top:60px"><div class="tap" style="left:0" onclick="stepStory(-1)"></div><div class="tap" style="right:0" onclick="stepStory(1)"></div></div>
+<button onclick="closeStory()" style="position:absolute;top:22px;right:10px;background:none;font-size:22px;z-index:2">✕</button></div>
+</div>
+<script src="/socket.io/socket.io.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.t,me,sock,tab='feed',chatWith=null,lives=[],lastLocs=[],STORIES={};
+async function api(p,m='GET',b){const r=await fetch('/api/'+p,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:b?JSON.stringify(b):undefined});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Error');return j}
+const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',3000)}
+const hue=u=>{let h=0;for(const c of u)h=(h*31+c.charCodeAt(0))%360;return h};
+const av=(u,s=36)=>AV[u]?`<img class=av src="${esc(AV[u])}" style="width:${s}px;height:${s}px;object-fit:cover">`:`<span class=av style="width:${s}px;height:${s}px;font-size:${Math.round(s*.45)}px;background:hsl(${hue(u)},65%,42%)">${esc(u[0].toUpperCase())}</span>`;
+async function authIn(k){try{const r=await fetch('/api/'+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})});
+ const j=await r.json();if(!r.ok)throw new Error(j.error);token=localStorage.t=j.token;start()}catch(e){$('aerr').textContent=e.message}}
+async function start(){if(!token)return;try{me=await api('me')}catch{localStorage.removeItem('t');return}
+ $('auth').hidden=true;$('authbg').hidden=true;stopEarth();$('app').hidden=false;
+ sock=io({auth:{token}});
+ sock.on('lives',x=>{lives=x;if(tab==='live')renderLives()});sock.on('dm',onDm);
+ sock.on('live:stats',s=>{const e=s.host===me.username?$('hstat'):(s.host===watching?$('vstat'):null);if(e)e.textContent='👁 '+s.viewers+' watching · ❤️ '+s.likes});
+ sock.on('live:like',()=>heart(liveStream?$('hbox'):$('wbox')));
+ sock.on('chatloc',d=>{if(!FL[d.from])toast('📍 @'+d.from+' is sharing their live location — open the map 🌍');FL[d.from]=d;redraw();banner()});
+ sock.on('chatloc:stop',u=>{delete FL[u];redraw();banner()});
+ sock.on('sos',d=>{const first=!SOSL[d.user];SOSL[d.user]=d;redraw();if(first)showSosAlert(d)});
+ sock.on('sos:stop',u=>{delete SOSL[u];redraw();const a=$('sosa');if(a)a.remove()});
+ sock.on('walk:warn',()=>{toast('⏰ Less than 1 minute left — tap “I arrived safe”');navigator.vibrate&&navigator.vibrate([200,100,200])});
+ sock.on('walk:expired',()=>{walkEnd=0;navigator.geolocation.clearWatch(walkW);clearInterval(walkTm);if($('wb'))setWalk();toast('Safe Walk alert sent to your trusted contacts')});sock.on('live:started',u=>toast('🔴 @'+u+' is live — tap 🔴 to join'));sock.on('locs',drawLocs);sock.on('rtc',onRtc);
+ sock.on('live:viewer',onViewer);sock.on('live:sig',onLiveSig);sock.on('live:ended',h=>{if(watching===h)stopWatch()});
+ sock.on('live:chat',m=>{const d=document.createElement('div');d.innerHTML='<b>'+esc(m.user)+'</b> '+esc(m.text);$('lchat').appendChild(d);$('lchat').scrollTop=1e9});
+ await loadAv();setHdr();show('feed');toast('Welcome, '+(me.firstName||'@'+me.username)+' 👋')}
+function logout(){localStorage.removeItem('t');location.reload()}
+function show(t){tab=t;document.querySelectorAll('section').forEach(s=>s.hidden=s.id!=='s-'+t);
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0);
+ loadAv().then(()=>({feed:loadFeed,people:loadPeople,chat:loadChats,live:renderLives,create:()=>{},map:initMap,orbit:initOrbit,settings:loadSettings,market:loadMarket,sos:loadSos,saved:loadSaved,reels:loadReels,hub:loadHub,profile:loadProfile})[t]()).catch(e=>toast(e.message))}
+function pickImg(inp,mx){mx=mx||(LD()?480:800);return new Promise(res=>{const f=inp.files[0];if(!f)return res('');const im=new Image();
+ im.onload=()=>{const k=Math.min(1,mx/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',LD()?.5:.75))};im.src=URL.createObjectURL(f)})}
+function prev(i){const f=i.files[0];$('prev').hidden=!f;if(f)$('prev').src=URL.createObjectURL(f)}
+/* FEED + STORIES */
+async function loadFeed(){const y=scrollY,[ps,ss]=await Promise.all([api('feed'+LDQ()),api('statuses'+LDQ())]);
+ POSTS=ps;const by={};ss.slice().reverse().forEach(s=>(by[s.user]=by[s.user]||[]).push(s));STORIES=by;
+ $('stories').innerHTML=`<div class=st onclick="show('create')"><span class="ring add">${av(me.username,56)}<b>＋</b></span><small>Your story</small></div>`+
+  Object.keys(by).map(u=>`<div class=st onclick="openStory('${u}')"><span class=ring>${av(u,56)}</span><small>${u===me.username?'You':u}</small></div>`).join('');
+ if(LD())localStorage.savedkb=(+localStorage.savedkb||0)+[...ps,...ss].reduce((a,x)=>a+(x.hasImage?x.kb||0:0),0);
+ $('composer').innerHTML=`<div class=fp style="padding:10px"><div class=row style="margin:0">${av(me.username,40)}<button class=cbtn onclick="show('create')">What's on your mind, ${esc(me.firstName||me.username)}?</button></div><div class=row><button class=ab onclick="show('create')">📷 Photo</button><button class=ab onclick="show('create')">🎥 Video</button><button class=ab onclick="show('live')">🔴 Live</button><button class=ab onclick="show('create')">⏳ Capsule</button></div></div>`;
+ $('posts').innerHTML=ps.map(fpost).join('')||'<p class=mut style="text-align:center;padding:40px">No posts yet. Tap ＋ to share the first one!</p>';scrollTo(0,y)}
+async function doPost(story){try{const vf=$('cvid').files[0];let video='';
+ if(vf){if(story)return toast('Videos go to your feed, not stories');if(vf.size>25*1048576)return toast('Video too large — max 25 MB');toast('Uploading video…');
+  const r=await fetch('/api/upload',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':vf.type||'video/mp4'},body:vf}),j=await r.json();if(!r.ok)throw new Error(j.error||'Upload failed');video=j.url}
+ let unlockAt=0;if(!story&&$('cap').checked){unlockAt=new Date($('capt').value).getTime();if(!(unlockAt>Date.now()))return toast('Pick a future date for your time capsule')}
+ await api(story?'status':'posts','POST',{text:$('ct').value,image:await pickImg($('ci')),video,unlockAt});
+ $('ct').value='';$('ci').value='';$('cvid').value='';$('vinfo').textContent='';$('cap').checked=false;$('prev').hidden=true;toast(story?'Added to your story ✨':(unlockAt?'Time capsule sealed 🔒':'Posted!'));show('feed')}catch(e){toast(e.message)}}
+async function like(id){await api('posts/'+id+'/like','POST');loadFeed()}
+async function comment(id){const t=$('c'+id).value;if(!t.trim())return;await api('posts/'+id+'/comment','POST',{text:t});loadFeed()}
+let sv={};
+function openStory(u){sv={u,i:0};showStory()}
+function showStory(){const l=STORIES[sv.u]||[],s=l[sv.i];if(!s)return closeStory();if(s.hasImage&&!s.image){return api('img/status/'+s.id).then(j=>{s.image=j.image;s.hasImage=false;showStory()}).catch(()=>{s.hasImage=false;showStory()})}clearTimeout(sv.t);$('sv').hidden=false;
+ $('svh').innerHTML=av(sv.u,34)+'<b>'+esc(sv.u)+'</b><small>'+ago(s.time)+'</small>';
+ $('svb').innerHTML=s.image?`<img src="${esc(s.image)}">`+(s.text?`<p class=cp>${esc(s.text)}</p>`:''):`<p class=big style="background:hsl(${hue(sv.u)},55%,30%)">${esc(s.text)}</p>`;
+ $('svp').innerHTML=l.map((_,k)=>`<i class="${k<=sv.i?'on':''}"></i>`).join('');sv.t=setTimeout(()=>{sv.i++;showStory()},5000)}
+function closeStory(){clearTimeout(sv.t);$('sv').hidden=true}
+function stepStory(d){sv.i=Math.max(0,sv.i+d);showStory()}
+/* PEOPLE */
+async function loadPeople(){const us=await api('users?q='+encodeURIComponent($('q').value));
+ $('plist').innerHTML=`<h3 style="margin:12px 0 0">${$('q').value?'Results':'People you may know'}</h3>`+us.map(u=>`<div class="li" style="cursor:default">${av(u.username,46)}<div style="flex:1"><b>${u.username}</b>${u.isNew?' <span class=new>NEW</span>':''}<br><small>${esc(((u.firstName||'')+' '+(u.surname||'')).trim())} · ${u.followers} followers</small></div><button class="${u.followed?'':'blue'}" onclick="follow('${u.username}')">${u.followed?'Following':'Follow'}</button><button onclick="openChat('${u.username}')">💬</button><button onclick="askBlock('${u.username}')">🚫</button></div>`).join('')||'<p class=mut style="padding:20px">No other users yet — invite friends!</p>'}
+async function follow(n){await api('follow/'+n,'POST');me=await api('me');loadPeople()}
+/* CHAT */
+async function loadChats(){const c=await api('chats');if(chatWith)return openChat(chatWith);$('cbox').hidden=true;$('clist').hidden=false;
+ $('clist').innerHTML='<h3 style="margin-top:14px">Chat</h3>'+(c.map(u=>`<div class=li onclick="openChat('${u}')">${av(u,46)}<div><b>${u}</b><br><small>Tap to chat</small></div></div>`).join('')||'<p class=mut>No chats yet — find people with 🔍</p>')}
+async function openChat(u){chatWith=u;if(tab!=='chat')return show('chat');$('clist').hidden=true;$('cbox').hidden=false;$('cname').innerHTML=av(u,30)+' <b>'+u+'</b>';$('msgs').innerHTML='';(await api('messages/'+u)).forEach(addMsg);banner()}
+function backChat(){chatWith=null;loadChats()}
+function addMsg(m){const d=document.createElement('div');d.className='m '+(m.from===me.username?'me':'');if(m.audio){const a=document.createElement('audio');a.controls=true;a.src=m.audio;d.appendChild(a);if(m.lang||m.transcript){const t=document.createElement('div');t.style.cssText='font-size:12px;margin-top:4px;opacity:.85';t.textContent=(m.lang?'🌍 '+m.lang:'')+(m.transcript?' — “'+m.transcript+'”':'');d.appendChild(t)}}
+ else if(m.hasSnap){if(m.to===me.username){d.textContent='📸 Snap — tap to view';d.style.cursor='pointer';d.onclick=()=>viewSnap(m.id,d)}else d.textContent='📸 Snap sent'}
+ else if(m.viewed)d.textContent='📸 Snap opened';
+ else d.innerHTML=esc(m.text).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');$('msgs').appendChild(d);$('msgs').scrollTop=1e9}
+function sendDm(){const t=$('mt').value.trim();if(!t||!chatWith)return;sock.emit('dm',{to:chatWith,text:t});$('mt').value=''}
+function onDm(m){const o=m.from===me.username?m.to:m.from;if(tab==='chat'&&chatWith===o)addMsg(m);else if(m.to===me.username)toast('💬 '+m.from+': '+(m.text||(m.hasSnap?'📸 Snap':'🎤 Voice message')).slice(0,40))}
+/* VIDEO CALL */
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};let pc,peer,stream;
+function addIce(p,c){if(p.remoteDescription)p.addIceCandidate(c).catch(()=>{});else(p._q=p._q||[]).push(c)}
+async function setRemote(p,d){await p.setRemoteDescription(d);(p._q||[]).forEach(c=>p.addIceCandidate(c).catch(()=>{}));p._q=[]}
+async function mkCall(){stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});$('cv').srcObject=stream;$('call').hidden=false;
+ pc=new RTCPeerConnection(ICE);stream.getTracks().forEach(t=>pc.addTrack(t,stream));pc.ontrack=e=>$('rv').srcObject=e.streams[0];
+ pc.onicecandidate=e=>e.candidate&&sock.emit('rtc',{to:peer,data:{ice:e.candidate}})}
+async function startCall(to){if(!to)return;try{peer=to;await mkCall();const o=await pc.createOffer();await pc.setLocalDescription(o);sock.emit('rtc',{to,data:{offer:o}})}catch(e){toast('Camera/mic error: '+e.message);endCall()}}
+async function onRtc({from,data}){
+ if(data.offer){if(pc||!confirm('@'+from+' is calling. Answer?')){sock.emit('rtc',{to:from,data:{bye:1}});return}
+  try{peer=from;await mkCall();await setRemote(pc,data.offer);const a=await pc.createAnswer();await pc.setLocalDescription(a);sock.emit('rtc',{to:from,data:{answer:a}})}catch(e){toast(e.message);endCall()}}
+ else if(data.answer&&pc)await setRemote(pc,data.answer);
+ else if(data.ice&&pc)addIce(pc,data.ice);
+ else if(data.bye&&from===peer)endCall(true)}
+function endCall(remote){if(!remote&&peer)sock.emit('rtc',{to:peer,data:{bye:1}});pc&&pc.close();pc=null;stream&&stream.getTracks().forEach(t=>t.stop());stream=null;peer=null;$('call').hidden=true}
+/* LIVE */
+let liveStream,hostPcs={},watching,wpc;
+function renderLives(){$('lives').innerHTML=lives.filter(h=>h!==me.username).map(h=>`<div class="card row"><span>🔴 @${h}</span><button onclick="watch('${h}')">Watch</button></div>`).join('')||'<p class=mut>Nobody is live right now.</p>'}
+async function toggleLive(){if(liveStream){sock.emit('live:stop');liveStream.getTracks().forEach(t=>t.stop());liveStream=null;Object.values(hostPcs).forEach(p=>p.close());hostPcs={};$('lv').hidden=true;$('hstat').textContent='';$('gl').textContent='🔴 Go Live';return}
+ try{liveStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true})}catch(e){return toast('Camera/mic error: '+e.message)}
+ $('lv').srcObject=liveStream;$('lv').hidden=false;$('gl').textContent='⏹ End live';sock.emit('live:start')}
+async function onViewer({id,user}){if(!liveStream)return;toast('👋 @'+user+' joined your live');const p=new RTCPeerConnection(ICE);hostPcs[id]=p;liveStream.getTracks().forEach(t=>p.addTrack(t,liveStream));
+ p.onicecandidate=e=>e.candidate&&sock.emit('live:sig',{to:id,data:{ice:e.candidate}});
+ const o=await p.createOffer();await p.setLocalDescription(o);sock.emit('live:sig',{to:id,data:{offer:o}})}
+async function onLiveSig({from,data}){
+ if(data.offer){wpc&&wpc.close();const p=wpc=new RTCPeerConnection(ICE);p.ontrack=e=>$('wv').srcObject=e.streams[0];
+  p.onicecandidate=e=>e.candidate&&sock.emit('live:sig',{to:from,data:{ice:e.candidate}});
+  await setRemote(p,data.offer);const a=await p.createAnswer();await p.setLocalDescription(a);sock.emit('live:sig',{to:from,data:{answer:a}})}
+ else if(data.answer&&hostPcs[from])await setRemote(hostPcs[from],data.answer);
+ else if(data.ice){const p=hostPcs[from]||wpc;p&&addIce(p,data.ice)}}
+function watch(h){watching=h;$('wbox').hidden=false;$('wname').textContent='🔴 @'+h;$('lchat').innerHTML='';sock.emit('live:join',h)}
+function stopWatch(){if(watching)sock.emit('live:leave',watching);watching=null;$('vstat').textContent='';wpc&&wpc.close();wpc=null;$('wv').srcObject=null;$('wbox').hidden=true}
+function liveChat(){const t=$('lt').value.trim();if(t&&watching){sock.emit('live:chat',{host:watching,text:t});$('lt').value=''}}
+/* STATUS */
+async function loadStatus(){const s=await api('statuses');
+ $('slist').innerHTML=s.map(x=>`<div class=card><b>@${esc(x.user)}</b> <small>${ago(x.time)} ago · gone in 24h</small><p>${esc(x.text)}</p>${x.image?`<img src="${esc(x.image)}">`:''}</div>`).join('')||'<p class=mut>No statuses right now.</p>'}
+async function postStatus(){try{await api('status','POST',{text:$('st').value,image:await pickImg($('si'))});$('st').value='';$('si').value='';loadStatus()}catch(e){toast(e.message)}}
+/* MAP + LOCATION */
+let map,markers=[],watchId=null,centered=false;
+function mkMap(el,z){const m=L.map(el,{worldCopyJump:true}).setView([9.07,7.4],z),earth=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles © Esri',maxZoom:18}),streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});earth.addTo(m);L.control.layers({'🌍 Earth':earth,'🗺️ Streets':streets}).addTo(m);return m}
+async function initMap(){if(!map){map=mkMap('map',5);drawLocs(lastLocs)}setTimeout(()=>map.invalidateSize(),50)}
+function drawLocs(v){lastLocs=v;redraw()}
+function redraw(){if(!map)return;markers.forEach(m=>m.remove());
+ const all=[...lastLocs.map(l=>({lat:l.lat,lng:l.lng,t:'@'+l.user})),...Object.values(FL).map(l=>({lat:l.lat,lng:l.lng,t:'📍 @'+l.from+' (chat)'})),...Object.values(SOSL).map(l=>({lat:l.lat,lng:l.lng,t:'🆘 @'+l.user,sos:1}))].filter(l=>isFinite(l.lat));
+ markers=all.map(l=>L.marker([l.lat,l.lng],l.sos?{icon:L.divIcon({html:'<div style="font-size:30px">🆘</div>',className:'',iconSize:[30,30]})}:{}).addTo(map).bindTooltip(l.t,{permanent:true}))}
+function toggleShare(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;sock.emit('loc:stop');$('sh').textContent='📍 Share my location';return}
+ if(!navigator.geolocation)return toast('Location not supported on this device');
+ watchId=navigator.geolocation.watchPosition(p=>{sock.emit('loc',{lat:p.coords.latitude,lng:p.coords.longitude});if(!centered){map.setView([p.coords.latitude,p.coords.longitude],14);centered=true}},
+ e=>toast('Location error: '+e.message),{enableHighAccuracy:true,maximumAge:5000});$('sh').textContent='⏹ Stop sharing'}
+/* SATELLITE */
+let omap,iss,otimer;
+async function initOrbit(){if(!omap){omap=mkMap('omap',2);iss=L.circleMarker([0,0],{radius:9,color:'#ff2bd6',fillOpacity:.7}).addTo(omap)}
+ setTimeout(()=>omap.invalidateSize(),50);clearInterval(otimer);updIss();otimer=setInterval(()=>{if(tab==='orbit')updIss()},LD()?30000:5000)}
+async function updIss(){try{const d=await fetch('https://api.wheretheiss.at/v1/satellites/25544').then(r=>r.json());
+ iss.setLatLng([d.latitude,d.longitude]);omap.panTo([d.latitude,d.longitude]);
+ $('oinfo').innerHTML=`Lat ${d.latitude.toFixed(2)}, Lng ${d.longitude.toFixed(2)}<br>Altitude ${d.altitude.toFixed(0)} km · Speed ${d.velocity.toFixed(0)} km/h`}catch{$('oinfo').textContent='Could not reach the satellite tracking service.'}}
+const LD=()=>localStorage.lowdata==='1',LDQ=()=>LD()?'?lite=1':'',BR=()=>LD()?16000:32000;
+let FL={},SOSL={},cShare=null,sosT=null,sosOn=false,sosW=null,sr=null,trs='';
+const IMG=(k,x,c)=>x.image?`<img class="${c}" src="${esc(x.image)}">`:x.hasImage?`<div class="ldp ${c}" onclick="ldImg(this,'${k}','${x.id}','${c}')">📷 Tap to load photo · ${x.kb} KB</div>`:'';
+async function ldImg(el,k,id,c){el.textContent='Loading…';try{const j=await api('img/'+k+'/'+id);el.outerHTML=`<img class="${c}" src="${esc(j.image)}">`}catch(e){el.textContent='Failed — tap to retry'}}
+function toggleLD(){localStorage.lowdata=LD()?'0':'1';toast(LD()?'Low data mode ON 📉':'Low data mode OFF');loadAv().then(loadSettings)}
+async function savePost(id){await api('save/'+id,'POST');me=await api('me');loadFeed()}
+async function loadSaved(){const ps=await api('saved'+LDQ());$('svlist').innerHTML=ps.map(p=>`<div class=post><div class=ph>${av(p.user)}<b>${esc(p.user)}</b></div>${p.image||p.hasImage?IMG('post',p,'pimg'):''}<div class=cap>${esc(p.text)}</div></div>`).join('')||'<p class=mut>Nothing saved yet — tap ☆ on a post.</p>'}
+async function loadMarket(){const ms=await api('market'+LDQ());$('mlist').innerHTML=ms.map(m=>`<div class="card">${IMG('market',m,'mimg')}<div class=row><b>${esc(m.title)}</b><b style="color:#16a34a">${esc(m.price)}</b></div><p>${esc(m.desc)}</p><div class=row><small>${av(m.user,22)} @${m.user}</small>${m.user===me.username?`<button onclick="delItem('${m.id}')">Delete</button>`:`<button class="blue" onclick="openChat('${m.user}')">💬 Chat to buy</button>`}</div></div>`).join('')||'<p class=mut>No items yet — be the first seller!</p>'}
+async function sell(){try{await api('market','POST',{title:$('mtt').value,price:$('mpr').value,desc:$('mds').value,image:await pickImg($('mim'))});['mtt','mpr','mds'].forEach(i=>$(i).value='');$('mim').value='';toast('Listed ✅');loadMarket()}catch(e){toast(e.message)}}
+async function delItem(id){if(confirm('Delete this listing?')){await api('market/'+id,'DELETE');loadMarket()}}
+async function sendSnap(i){const im=await pickImg(i);i.value='';if(im&&chatWith)sock.emit('dm',{to:chatWith,snap:im})}
+async function viewSnap(id,el){try{const j=await api('snap/'+id+'/view','POST');const v=document.createElement('div');v.style.cssText='position:fixed;inset:0;background:#000;z-index:70;display:flex;align-items:center;justify-content:center';
+ v.innerHTML=`<img src="${esc(j.image)}" style="max-width:100%;max-height:100%"><p style="position:absolute;top:20px;color:#fff;margin:0">📸 Disappears after you close it — tap to close</p>`;v.onclick=()=>v.remove();document.body.appendChild(v)}catch(e){toast(e.message)}el.textContent='📸 Snap opened';el.onclick=null}
+function startSR(lang){const R=window.SpeechRecognition||window.webkitSpeechRecognition;trs='';if(!R)return;try{sr=new R();sr.lang=lang;sr.continuous=true;sr.interimResults=false;
+ sr.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)trs+=e.results[i][0].transcript+' '};sr.onerror=()=>{};
+ sr.onend=()=>{if(rec&&rec.state==='recording')try{sr.start()}catch(e){}};sr.start()}catch(e){sr=null}}
+function banner(){const b=$('lbanner');if(!b)return;const f=chatWith&&FL[chatWith];b.hidden=!f;if(f)b.innerHTML='📍 @'+chatWith+' is sharing live location · <a href="#" onclick="show(\'map\');return false" style="color:#0095f6">View on map</a>';
+ if($('cls'))$('cls').textContent=cShare&&cShare.to===chatWith?'📍 ON':'📍'}
+function stopChatShare(){if(!cShare)return;navigator.geolocation.clearWatch(cShare.w);sock.emit('chatloc:stop',cShare.to);cShare=null}
+function toggleChatShare(){const to=chatWith;if(!to)return;if(cShare&&cShare.to===to){stopChatShare();banner();return toast('Stopped sharing your location')}
+ if(!navigator.geolocation)return toast('Location not supported on this device');if(!confirm('Share your live location with @'+to+' until you stop?'))return;stopChatShare();
+ cShare={to,w:navigator.geolocation.watchPosition(p=>sock.emit('chatloc',{to,lat:p.coords.latitude,lng:p.coords.longitude}),e=>toast('Location error: '+e.message),{enableHighAccuracy:true,maximumAge:5000})};banner();toast('Sharing live location with @'+to)}
+async function loadSos(){me=await api('me');setWalk();$('tlist').innerHTML=me.trustedList.map(u=>`<div class=li style="cursor:default">${av(u,36)}<b style="flex:1">${u}</b><button onclick="trustU('${u}')">Remove</button></div>`).join('')||'<p class=mut>Add at least one person you trust.</p>';setSos()}
+async function trustU(n){try{await api('trusted/'+n,'POST');loadSos()}catch(e){toast(e.message)}}
+function addTrusted(){const n=$('tu').value.trim().toLowerCase();$('tu').value='';if(n)trustU(n)}
+function setSos(){$('sosb').textContent=sosOn?"I'M SAFE":'SOS';$('sosb').style.background=sosOn?'#16a34a':'#dc2626';$('sosst').textContent=sosOn?'🔴 SOS active — your trusted contacts can see your live location. Tap the button to stop.':''}
+function sosDown(){if(sosOn)return;$('sosst').textContent='Keep holding…';sosT=setTimeout(sosGo,2000)}
+function sosUp(){clearTimeout(sosT);if(!sosOn)$('sosst').textContent=''}
+function sosGo(){if(!me.trustedList.length)return toast('Add a trusted contact first');if(!navigator.geolocation)return toast('Location not supported on this device');navigator.vibrate&&navigator.vibrate(200);
+ sosW=navigator.geolocation.watchPosition(p=>{const d={lat:p.coords.latitude,lng:p.coords.longitude};if(!sosOn){sosOn=true;sock.emit('sos',d);setSos()}else sock.emit('sos:loc',d)},()=>toast('Turn on location to send SOS'),{enableHighAccuracy:true,maximumAge:3000})}
+function sosStop(){navigator.geolocation.clearWatch(sosW);sosOn=false;sock.emit('sos:stop');setSos()}
+function showSosAlert(d){let a=$('sosa');if(!a){a=document.createElement('div');a.id='sosa';a.style.cssText='position:fixed;inset:0;background:#b91c1c;color:#fff;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px';document.body.appendChild(a)}
+ a.innerHTML=`<div style="font-size:60px">🆘</div><h2>@${esc(d.user)} needs help!</h2><a style="color:#fff" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${d.lat},${d.lng}">📍 Open location in Google Maps</a><button onclick="$('sosa').remove();show('map')">View on Earth map</button><button onclick="$('sosa').remove();openChat('${esc(d.user)}')">💬 Chat</button><button onclick="$('sosa').remove()">Dismiss</button>`;navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}
+document.addEventListener('focusin',e=>{if(e.target.tagName==='INPUT')window.GS=.014;const g=$('guide'),i=e.target;if(!g||i.tagName!=='INPUT')return;g.classList.toggle('shy',i.type==='password');g.classList.toggle('lk',i.type!=='password'&&i.type!=='file')});
+document.addEventListener('focusout',()=>{window.GS=.004;const g=$('guide');g&&g.classList.remove('shy','lk')});
+setTimeout(()=>{const g=$('guide');g&&g.classList.remove('hi')},4500);
+const REAC=['👍','❤️','😂','😮','😢','😡'];let RT,RLONG=false,EXPD=new Set(),RO=null,walkW=null,walkEnd=0,walkTm=null;
+const mineR=p=>(p.react||{})[me.username]||'';
+function fpost(p){
+ if(p.locked)return `<div class=fp><div class=ph>${av(p.user)}<b>${esc(p.user)}</b><small>• ${ago(p.time)}</small></div><div class=tbox style="background:linear-gradient(135deg,#312e81,#0f172a);min-height:150px;color:#fff">🔒 Time capsule<br><small style="color:#c7d2fe">Opens ${esc(new Date(p.unlockAt).toLocaleString())}</small></div></div>`;
+ const rc=Object.values(p.react||{}),tot=rc.length,top=[...new Set(rc)].sort((a,b)=>rc.filter(x=>x===b).length-rc.filter(x=>x===a).length).slice(0,3).join(''),m=mineR(p),cm=p.comments||[],shown=EXPD.has(p.id)?cm:cm.slice(-2);
+ const vid=(src)=>`<video class="pimg" src="${esc(src)}" controls playsinline preload="${LD()?'none':'metadata'}"></video>`;
+ const media=p.video?vid(p.video):(p.image||p.hasImage?IMG('post',p,'pimg'):'');
+ const body=p.of?(p.orig?`<div class="card" style="margin:6px 10px"><div class=ph style="padding:4px 0">${av(p.orig.user,28)}<b>${esc(p.orig.user)}</b><small>• ${ago(p.orig.time)}</small></div><p style="margin:4px 0">${esc(p.orig.text||'')}</p>${p.orig.video?vid(p.orig.video):(p.orig.image||p.orig.hasImage?IMG('post',p.orig,'pimg'):'')}</div>`:'<p class=mut style="padding:0 12px">This post is no longer available.</p>'):'';
+ return `<div class=fp><div class=ph>${av(p.user)}<div style="flex:1"><b style="cursor:pointer" onclick="viewProfile('${p.user}')">${esc(p.user)}</b>${p.of?' <small>shared a post</small>':''}<br><small>${ago(p.time)} · 🌍${p.unlockAt?' · ⏳ time capsule':''}</small></div>${p.user!==me.username?`<button class=fbb onclick="followU('${p.user}')">${me.followingList.includes(p.user)?'Following':'+ Follow'}</button><button class=fbb onclick="reportIt('post','${p.id}')">⚑</button>`:`<button class=fbb onclick="delPost('${p.id}')">🗑</button>`}</div>
+ ${p.text?`<p style="padding:0 12px;margin:0 0 8px;white-space:pre-wrap;word-break:break-word">${esc(p.text)}</p>`:''}${body}${media}
+ <div class=cnt><span>${tot?top+' '+tot:''}</span><span>${cm.length?cm.length+' comments':''}${p.shares?' · '+p.shares+' shares':''}</span></div>
+ <div class=abar><button class=ab onpointerdown="rpDown('${p.id}',this)" onpointerup="rpUp('${p.id}')" onpointerleave="clearTimeout(RT)" onpointercancel="clearTimeout(RT)" oncontextmenu="return false">${m||'👍 Like'}</button><button class=ab onclick="$('c${p.id}').focus()">💬</button><button class=ab onclick="repost('${p.id}')">🔁 Share</button><button class=ab onclick="share('${p.id}')">📤</button><button class=ab onclick="savePost('${p.id}')">${me.savedList.includes(p.id)?'⭐':'☆'}</button></div>
+ ${cm.length>2&&!EXPD.has(p.id)?`<a class=vm onclick="EXPD.add('${p.id}');loadFeed()">View all ${cm.length} comments</a>`:''}${shown.map(c=>`<div class=cm><b>${esc(c.user)}</b> ${esc(c.text)}</div>`).join('')}
+ <div class=cin><input id="c${p.id}" placeholder="Write a comment..."><button onclick="comment('${p.id}')">Send</button></div></div>`}
+function rpDown(id,el){RLONG=false;RT=setTimeout(()=>{RLONG=true;openRP(id,el)},450)}
+function rpUp(id){clearTimeout(RT);if(!RLONG)react(id,'👍')}
+function openRP(id,el){document.querySelectorAll('.rpick').forEach(x=>x.remove());const r=el.getBoundingClientRect(),d=document.createElement('div');d.className='rpick';d.style.top=(r.top+scrollY-52)+'px';d.style.left=Math.max(6,Math.min(r.left,innerWidth-270))+'px';
+ d.innerHTML=REAC.map(e=>`<button onclick="react('${id}','${e}')">${e}</button>`).join('');document.body.appendChild(d);setTimeout(()=>document.addEventListener('click',()=>d.remove(),{once:true}),50)}
+async function react(id,e){try{await api('posts/'+id+'/react','POST',{emoji:e});loadFeed()}catch(x){toast(x.message)}}
+async function repost(id){if(confirm('Share this post to your feed?')){try{await api('posts/'+id+'/share','POST');toast('Shared to your feed 🔁');loadFeed()}catch(x){toast(x.message)}}}
+function vprev(i){const f=i.files[0];$('vinfo').textContent=f?'🎥 '+f.name+' ('+(f.size/1048576).toFixed(1)+' MB)':''}
+async function loadReels(){const ps=(await api('feed'+LDQ())).filter(p=>p.video&&!p.locked);POSTS=ps;
+ $('reels').innerHTML=ps.map(p=>`<div class=reel><video src="${esc(p.video)}" loop playsinline muted preload="${LD()?'none':'metadata'}" onclick="reelTap(this)"></video><div class=rinfo><div>${av(p.user,34)} <b>@${esc(p.user)}</b></div><div>${esc(p.text||'')}</div></div><div class=rside><button onclick="reelLike('${p.id}',this)">${mineR(p)?'❤️':'🤍'}<br><small>${Object.keys(p.react||{}).length}</small></button><button onclick="share('${p.id}')">📤</button></div></div>`).join('')||'<p class=mut style="padding:30px;text-align:center">No videos yet — be the first to post one! 🎬</p>';
+ RO&&RO.disconnect();RO=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');if(!v)return;if(e.isIntersecting&&e.intersectionRatio>.6)v.play().catch(()=>{});else v.pause()}),{root:$('reels'),threshold:[.6]});document.querySelectorAll('.reel').forEach(x=>RO.observe(x))}
+function reelTap(v){v.muted=!v.muted;toast(v.muted?'🔇 Muted':'🔊 Sound on')}
+async function reelLike(id,b){const r=await api('posts/'+id+'/react','POST',{emoji:'❤️'});b.innerHTML=(r.mine?'❤️':'🤍')+'<br><small>'+r.count+'</small>'}
+async function saveProfile(){try{const r=await api('profile','POST',{firstName:$('pfn').value,surname:$('psn').value,username:$('pun').value,email:$('pem').value,bio:$('pbio').value});if(r.token){localStorage.t=r.token;toast('Username updated — reloading…');setTimeout(()=>location.reload(),900)}else{toast('Profile saved ✅');loadSettings()}}catch(e){toast(e.message)}}
+function walkToggle(){if(walkEnd){walkStop();return}if(!me.trustedList.length)return toast('Add a trusted contact first');if(!navigator.geolocation)return toast('Location not supported on this device');
+ const mins=+$('wm').value;walkEnd=Date.now()+mins*60000;sock.emit('walk:start',{mins});
+ walkW=navigator.geolocation.watchPosition(p=>sock.emit('walk:loc',{lat:p.coords.latitude,lng:p.coords.longitude}),()=>toast('Turn on location for Safe Walk'),{enableHighAccuracy:true,maximumAge:5000});
+ walkTm=setInterval(walkTick,1000);walkTick();setWalk()}
+function walkTick(){const t=Math.max(0,Math.round((walkEnd-Date.now())/1000));if($('wst'))$('wst').textContent='⏱ '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0')+' left — tap “I arrived safe” before it ends';if(t<=0)clearInterval(walkTm)}
+function walkStop(){navigator.geolocation.clearWatch(walkW);clearInterval(walkTm);walkEnd=0;sock.emit('walk:stop');setWalk();toast('Glad you are safe ✅')}
+function setWalk(){$('wb').textContent=walkEnd?'✅ I arrived safe':'Start Safe Walk';$('wb').className=walkEnd?'yel':'blue';if(!walkEnd)$('wst').textContent=''}
+const AT=['⚡ Power outage','🌊 Flood','🚧 Road blocked / traffic','⛽ Fuel available','💧 Water supply','📶 Network down','🚨 Danger — be careful'],BT=['O+','O-','A+','A-','B+','B-','AB+','AB-'],ME=['','😞','😕','😐','🙂','😄'];let HT='alerts',PT,LP=null,LPt=0,PFU=null;
+const postJ=async(p,b)=>{const r=await fetch('/api/'+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}),j=await r.json();if(!r.ok)throw new Error(j.error||'Error');return j};
+async function sendCode(){const e=$('ferr');try{await postJ('forgot',{email:$('fe').value});e.style.color='#22c55e';e.textContent='If that email has an account, a code is on its way (check spam).'}catch(x){e.style.color='';e.textContent=x.message}}
+async function doReset(){const e=$('ferr');try{const j=await postJ('reset',{email:$('fe').value,code:$('fc').value,password:$('fp2').value});token=localStorage.t=j.token;start()}catch(x){e.style.color='';e.textContent=x.message}}
+const getPos=()=>new Promise(res=>{if(LP&&Date.now()-LPt<6e4)return res(LP);navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{LP={lat:p.coords.latitude,lng:p.coords.longitude};LPt=Date.now();res(LP)},()=>res(null),{timeout:7000,maximumAge:60000}):res(null)});
+function reportIt(k,r){if(confirm('Report this '+k+' for review?')){api('report','POST',{kind:k,ref:r});toast('Thanks — we will review it')}}
+function delPost(id){if(confirm('Delete this post?'))api('posts/'+id,'DELETE').then(()=>{toast('Deleted');show(tab)})}
+function viewProfile(u){if(u===me.username)return show('settings');PFU=u;show('profile')}
+async function loadProfile(){const d=await api('user/'+PFU);POSTS=d.posts;
+ $('pf').innerHTML=`<div class=card style="text-align:center">${av(d.username,84)}<h3 style="margin:8px 0 0">${esc((d.firstName+' '+d.surname).trim())}</h3><small>@${d.username}</small><p>${esc(d.bio||'')}</p><small>${d.followers} followers · ${d.following} following</small><div class=row style="justify-content:center"><button class="${d.followed?'':'blue'}" onclick="follow2('${d.username}')">${d.followed?'Following':'Follow'}</button><button onclick="openChat('${d.username}')">💬 Message</button><button onclick="askBlock('${d.username}')">🚫</button></div></div>`+d.posts.map(fpost).join('')}
+async function follow2(n){await api('follow/'+n,'POST');me=await api('me');loadProfile()}
+async function delAccount(){if(!confirm('This permanently deletes your account and everything in it. Continue?'))return;try{await api('account/delete','POST',{password:$('dpw').value});localStorage.removeItem('t');toast('Account deleted');setTimeout(()=>location.reload(),900)}catch(e){toast(e.message)}}
+async function loadHub(){loadMood();hubTab(HT)}
+function hubTab(t){if(t==='market')return show('market');HT=t;document.querySelectorAll('#hubtabs button').forEach(b=>b.classList.toggle('blue',b.dataset.h===t));({alerts:hAlerts,prices:hPrices,blood:hBlood,circles:hCircles})[t]()}
+async function loadMood(){const m=await api('moods'),today=new Date().toISOString().slice(0,10),done=m.find(x=>x.d===today),set=new Set(m.map(x=>x.d));let st=0;
+ for(let i=0;i<60;i++){const d=new Date(Date.now()-i*864e5).toISOString().slice(0,10);if(set.has(d))st++;else if(i>0)break}
+ const low=m.length>=3&&m.slice(-3).every(x=>x.m<=2);
+ $('moodbox').innerHTML=(done?`<p style="margin:6px 0">Today: ${ME[done.m]} — saved ✅ <small class=mut>(tap an emoji to change)</small></p>`:'<p class=mut style="margin:6px 0">How are you feeling today? Only you can see this.</p>')+
+  `<div class=row style="justify-content:space-around">${[1,2,3,4,5].map(n=>`<button style="font-size:26px;padding:4px 10px" onclick="mood(${n})">${ME[n]}</button>`).join('')}</div>${done?'':'<input id="mn" placeholder="Add a note (optional)" style="margin-top:6px">'}
+  <p class=mut style="margin:8px 0 0">Last 7 check-ins: ${m.slice(-7).map(x=>ME[x.m]).join(' ')||'—'} · 🔥 ${st}-day streak</p>
+  ${low?`<div class=card style="background:#3b1d4a;margin:8px 0 0"><b>You've had a few heavy days 💜</b><p style="margin:6px 0">You don't have to carry it alone — talk to someone you trust today. If you ever feel you might hurt yourself, please contact your local emergency number or a crisis line right away.</p><button class="blue" onclick="lowHelp()">Message someone I trust</button></div>`:''}`}
+async function mood(n){await api('moods','POST',{m:n,note:$('mn')?$('mn').value:''});toast('Check-in saved 💚');loadMood()}
+function lowHelp(){me.trustedList&&me.trustedList.length?openChat(me.trustedList[0]):(toast('Add a trusted contact first'),show('sos'))}
+async function hAlerts(){const pos=await getPos(),a=await api('alerts'+(pos?`?lat=${pos.lat}&lng=${pos.lng}`:''));
+ $('hubbody').innerHTML=`<div class=card><b>⚡ Community alerts</b><p class=mut style="margin:4px 0">Tell your neighbours what is happening near you. Alerts disappear after 12 hours.</p><select id="at" style="max-width:100%">${AT.map(x=>`<option>${x}</option>`).join('')}</select><input id="atx" placeholder="Details (optional) e.g. Wuse market road" style="margin-top:6px"><button class="blue" style="width:100%;margin-top:8px" onclick="postAlert()">📍 Post alert from my location</button></div>`+
+ (a.map(x=>`<div class=card><b>${esc(x.type)}</b>${x.km!=null?` <small>· ${x.km} km away</small>`:''}<p style="margin:4px 0">${esc(x.text)}</p><div class=row><small>@${x.user} · ${ago(x.time)}</small><button class="${x.mine?'blue':''}" onclick="confAlert('${x.id}')">👍 Still true · ${x.confirms}</button></div></div>`).join('')||'<p class=mut style="padding:10px">No alerts right now.</p>')}
+async function postAlert(){try{const pos=await getPos();if(!pos)return toast('Turn on location to post an alert');await api('alerts','POST',{type:$('at').value,text:$('atx').value,...pos});toast('Alert posted ✅');hAlerts()}catch(e){toast(e.message)}}
+async function confAlert(id){await api('alerts/'+id+'/confirm','POST');hAlerts()}
+function hPrices(){$('hubbody').innerHTML=`<div class=card><b>💰 Market prices near you</b><p class=mut style="margin:4px 0">Share what things cost today so everyone can shop smarter.</p><div class=row><input id="pi1" placeholder="Item (e.g. rice 50kg)"><input id="pi2" type="number" placeholder="Price" style="max-width:110px"></div><input id="pi3" placeholder="Place / market" style="margin-top:6px"><button class="blue" style="width:100%;margin-top:8px" onclick="addPrice()">Add price</button></div><input id="ps" placeholder="🔍 Search an item" oninput="clearTimeout(PT);PT=setTimeout(priceRes,350)" style="margin-top:6px"><div id="plres"></div>`;priceRes()}
+async function priceRes(){const d=await api('prices?item='+encodeURIComponent($('ps').value));$('plres').innerHTML=d.avg.map(a=>`<div class=card><b>${esc(a.item)}</b> — average ${a.avg.toLocaleString()}<br><small>lowest ${a.min.toLocaleString()} · highest ${a.max.toLocaleString()} · ${a.n} report${a.n>1?'s':''}</small></div>`).join('')+d.list.map(p=>`<div class=li style="cursor:default"><div style="flex:1"><b>${esc(p.item)}</b> · ${p.price.toLocaleString()}<br><small>${esc(p.place)} · ${ago(p.time)} · @${p.user}</small></div></div>`).join('')||'<p class=mut style="padding:10px">No prices yet — add the first one.</p>'}
+async function addPrice(){try{await api('prices','POST',{item:$('pi1').value,price:$('pi2').value,place:$('pi3').value});toast('Thanks for sharing 🙌');hPrices()}catch(e){toast(e.message)}}
+function hBlood(){const d=me.donor||{};$('hubbody').innerHTML=`<div class=card><b>🩸 Find a blood donor</b><p class=mut style="margin:4px 0">Donors choose to be listed. Contact them through chat.</p><div class=row><select id="bt"><option value="">Any type</option>${BT.map(x=>`<option>${x}</option>`).join('')}</select><input id="bc" placeholder="City"></div><button class="blue" style="width:100%;margin-top:8px" onclick="bloodRes()">Search donors</button></div><div id="bres"></div>
+ <div class=card><b>❤️ Become a donor</b><p class=mut style="margin:4px 0">Your blood type and city will be visible to people searching. You can remove yourself any time.</p><div class=row><select id="dt">${BT.map(x=>`<option ${d.type===x?'selected':''}>${x}</option>`).join('')}</select><input id="dc" placeholder="Your city" value="${esc(d.city||'')}"></div><label class=mut style="display:block;margin-top:6px"><input type="checkbox" id="da" ${d.available!==false?'checked':''}> I am available to donate</label><div class=row><button class="blue" onclick="saveDonor()" style="flex:1">${me.donor?'Update':'Register as donor'}</button>${me.donor?'<button onclick="rmDonor()">Remove me</button>':''}</div></div>`;bloodRes()}
+async function bloodRes(){const d=await api('donors?type='+encodeURIComponent($('bt').value)+'&city='+encodeURIComponent($('bc').value));$('bres').innerHTML=d.map(x=>`<div class=li style="cursor:default">${av(x.username,40)}<div style="flex:1"><b>@${x.username}</b> <span class=new style="background:#dc2626;color:#fff">${x.type}</span><br><small>${esc(x.city||'—')}</small></div><button class="blue" onclick="openChat('${x.username}')">💬 Chat</button></div>`).join('')||'<p class=mut style="padding:10px">No donors found yet.</p>'}
+async function saveDonor(){try{await api('donor','POST',{type:$('dt').value,city:$('dc').value,available:$('da').checked});me=await api('me');toast('Saved ✅');hBlood()}catch(e){toast(e.message)}}
+async function rmDonor(){await api('donor','POST',{type:''});me=await api('me');toast('Removed');hBlood()}
+function hCircles(){$('hubbody').innerHTML=`<div class=card><b>🔄 Savings circles (Ajo / Esusu / Susu)</b><p class=mut style="margin:4px 0">Save together: everyone pays each round and one member collects the pot. Cyber World only tracks it — it never handles money.</p><input id="cn" placeholder="Circle name"><div class=row><input id="ca" type="number" placeholder="Amount per person"><select id="cf"><option value="monthly">Monthly</option><option value="weekly">Weekly</option></select></div><input id="cm" placeholder="Member usernames (comma separated)" style="margin-top:6px"><button class="blue" style="width:100%;margin-top:8px" onclick="mkCircle()">Create circle</button></div><div id="clres"></div>`;circRes()}
+async function circRes(){const cs=await api('circles');$('clres').innerHTML=cs.map(c=>{const pd=c.paid[c.round]||[],rec=c.order[c.round];return `<div class=card><b>🔄 ${esc(c.name)}</b> <small>· ${c.amount.toLocaleString()} ${c.freq}</small><p style="margin:6px 0">${c.done?'✅ Circle completed':`Round ${c.round+1} of ${c.order.length} · 🎁 <b>@${rec}</b> collects <b>${(c.amount*c.members.length).toLocaleString()}</b>`}</p><div>${c.members.map(m=>`<span class=chip>${pd.includes(m)?'✅':'⏳'} @${m}</span>`).join(' ')}</div>${c.done?'':`<div class=row><button class="${pd.includes(me.username)?'':'blue'}" onclick="circPay('${c.id}')">${pd.includes(me.username)?'Undo “I paid”':'I paid this round'}</button>${c.creator===me.username?`<button onclick="circNext('${c.id}')">Next round ➜</button>`:''}</div>`}</div>`}).join('')||'<p class=mut style="padding:10px">No circles yet — create one with people you trust.</p>'}
+async function mkCircle(){try{await api('circles','POST',{name:$('cn').value,amount:$('ca').value,freq:$('cf').value,members:$('cm').value});toast('Circle created 🔄');hCircles()}catch(e){toast(e.message)}}
+async function circPay(id){await api('circles/'+id+'/pay','POST');circRes()}
+async function circNext(id){if(confirm('Close this round and move to the next collector?')){await api('circles/'+id+'/next','POST');circRes()}}
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+let AV={};
+async function loadAv(){try{AV=LD()?{}:await api('avatars')}catch(e){}}
+function setHdr(){$('hav').innerHTML=av(me.username,26);$('who').textContent=me.username}
+function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;document.querySelector('meta[name=theme-color]').content=t==='light'?'#ffffff':'#000000';document.querySelectorAll('.thb').forEach(b=>b.classList.toggle('blue',b.dataset.th===t))}
+async function loadSettings(){me=await api('me');setHdr();applyTheme(localStorage.theme||'dark');$('ldb').textContent=LD()?'📉 ON — tap to turn off':'📉 OFF — tap to turn on';$('pfn').value=me.firstName||'';$('psn').value=me.surname||'';$('pun').value=me.username;$('pem').value=me.email||'';$('pbio').value=me.bio||'';$('dsv').textContent='Photos not downloaded so far: about '+((+localStorage.savedkb||0)/1024).toFixed(1)+' MB saved';
+ $('sprof').innerHTML=av(me.username,64)+`<div><b>${esc(((me.firstName||'')+' '+(me.surname||'')).trim()||'@'+me.username)}</b><br><small>@${me.username}</small><br><small>${me.followers} followers · ${me.following} following</small></div>`;
+ $('blist').innerHTML=me.blockedList.map(u=>`<div class=li style="cursor:default">${av(u,36)}<b style="flex:1">${u}</b><button onclick="blockU('${u}')">Unblock</button></div>`).join('')||'<p class=mut>No blocked accounts</p>'}
+async function setAvatar(i){try{const im=await pickImg(i,200);if(!im)return;await api('avatar','POST',{image:im});await loadAv();toast('Profile picture updated ✅');setHdr();loadSettings()}catch(e){toast(e.message)}}
+async function chPw(){try{await api('password','POST',{old:$('op').value,new:$('np').value});$('op').value=$('np').value='';toast('Password changed 🔒')}catch(e){toast(e.message)}}
+function askBlock(n){if(n&&confirm('Block @'+n+'? They won\'t be able to message you or see your posts.'))blockU(n)}
+async function blockU(n){try{const r=await api('block/'+n,'POST');me=await api('me');toast(r.blocked?'Blocked @'+n:'Unblocked @'+n);if($('bu'))$('bu').value='';
+ if(tab==='chat'){chatWith=null;loadChats()}else show(tab==='profile'?'feed':tab)}catch(e){toast(e.message)}}
+function heart(b){const h=document.createElement('span');h.className='fh';h.textContent='❤️';h.style.left=(10+Math.random()*70)+'%';b.appendChild(h);setTimeout(()=>h.remove(),1800)}
+function liveLike(){if(watching)sock.emit('live:like',watching)}
+function showAuth(v){$('login').hidden=v!=='login';$('signup').hidden=v!=='signup';$('forgot').hidden=v!=='forgot';setTimeout(()=>{if(v==='forgot')$('gtalk').textContent='No worries — we will email you a code 📧'});$('aerr').textContent=$('serr').textContent='';$('gtalk').textContent=v==='login'?'Welcome back! 👋 Log in to continue':'Let\'s get you set up — it only takes a minute ✨'}
+function togglePw(id,b){const i=$(id);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'}
+async function postAuth(path,body,err){try{const r=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error);token=localStorage.t=j.token;start()}catch(e){$(err).textContent=e.message}}
+function doLogin(){postAuth('login',{username:$('u').value,password:$('p').value},'aerr')}
+function doSignup(){if($('sp').value!==$('sp2').value)return $('serr').textContent='Passwords do not match';
+ postAuth('register',{firstName:$('fn').value,surname:$('sn').value,dob:$('dob').value,username:$('su').value,email:$('se').value,password:$('sp').value},'serr')}
+$('dob').max=new Date().toISOString().slice(0,10);
+applyTheme(localStorage.theme||'dark');
+let POSTS=[],bg,bgT,rec,chunks=[],recT,recS;
+async function followU(n){await api('follow/'+n,'POST');me=await api('me');loadFeed()}
+async function share(id){const p=POSTS.find(x=>x.id===id);if(!p)return;const d={title:'Cyber World',text:'@'+p.user+': '+(p.text||'Check out this post')+' — on Cyber World',url:location.origin};
+ try{if(navigator.share)await navigator.share(d);else{await navigator.clipboard.writeText(d.text+' '+d.url);toast('Link copied 📋')}}catch(e){}}
+async function toggleRec(){if(rec&&rec.state==='recording'){rec.stop();return}const to=chatWith;if(!to)return;
+ try{if(!window.MediaRecorder)throw new Error('Recording not supported on this browser');
+  const st=await navigator.mediaDevices.getUserMedia({audio:true}),mt=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'].find(t=>MediaRecorder.isTypeSupported(t));
+  rec=new MediaRecorder(st,mt?{mimeType:mt,audioBitsPerSecond:BR()}:{audioBitsPerSecond:BR()});chunks=[];
+  const LB=$('vl').value.split('|');rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{clearInterval(recT);st.getTracks().forEach(t=>t.stop());$('mic').classList.remove('rec');$('mic').textContent='🎤';sr&&sr.stop();if(!chunks.length)return;
+   const fr=new FileReader();fr.onload=()=>setTimeout(()=>sock.emit('dm',{to,audio:fr.result,lang:LB[1],transcript:trs.trim()}),800);fr.readAsDataURL(new Blob(chunks,{type:rec.mimeType||mt||'audio/webm'}))};
+  startSR(LB[0]);rec.start();recS=Date.now();$('mic').classList.add('rec');
+  recT=setInterval(()=>{const s=Math.floor((Date.now()-recS)/1000);$('mic').textContent='⏹ '+s+'s';if(s>=60)rec.stop()},500)
+ }catch(e){toast('Mic error: '+e.message)}}
+function stopEarth(){clearInterval(bgT);bg&&bg.remove();bg=null;$('earth').hidden=true;$('dn').hidden=true}
+if(false)bg=L.map('earth',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false,attributionControl:false}).setView([15,10],2);
+if(bg)L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(bg);
+if(bg){let lon=10;bgT=setInterval(()=>{lon=(lon+.2)%360;bg.setView([15,lon>180?lon-360:lon],2,{animate:false})},70)}
+(function(){
+const ES=$('earth'),sc=ES.getContext('2d');ES.width=innerWidth;ES.height=innerHeight;
+let SW=ES.width,SH=ES.height;addEventListener('resize',()=>{ES.width=SW=innerWidth;ES.height=SH=innerHeight});
+const ST=Array.from({length:LD()?90:Math.min(280,innerWidth/2.2|0)},(_,i)=>{const r=Math.pow(Math.random(),.6)*.75+.03;return{r,a:(i%3)*2.0944+r*5+(Math.random()-.5)*.7,z:Math.random()*1.4+.25,c:['#fff','#bfe9ff','#ffe9b0','#e6c7ff'][i%4],tw:Math.random()*6}});
+let gr=0;
+let SKY=localStorage.sky==='day'?'day':'night',SS=null;document.body.classList.toggle('day',SKY==='day');
+window.toggleSky=()=>{snap.width=ES.width;snap.height=ES.height;snap.getContext('2d').drawImage(ES,0,0);FT=performance.now();SKY=SKY==='day'?'night':'day';localStorage.sky=SKY;document.body.classList.toggle('day',SKY==='day')};
+const snap=document.createElement('canvas'),PH={day:null,night:null},SRC={day:['/bg-day.jpg','https://images.unsplash.com/photo-1593000292363-1a1dc70f845c?fm=jpg&q=70&w=1600&auto=format&fit=crop'],night:['/bg-night.jpg','https://images.pexels.com/photos/982384/nature-milky-way-stars-galaxy-982384.jpeg?auto=compress&cs=tinysrgb&w=1600','https://images.pexels.com/photos/3262249/pexels-photo-3262249.jpeg?auto=compress&cs=tinysrgb&w=1600']};let FT=0;$('auth').insertAdjacentHTML('beforeend','<p class="mut" style="font-size:11px;margin:10px 0 0">Photos: Thisum Lokumudali on Unsplash · Pexels</p>');
+if(!LD())for(const m of['day','night']){let i=0;const tr=()=>{if(i>=SRC[m].length)return;const im=new Image();im.onload=()=>{PH[m]=im};im.onerror=tr;im.src=SRC[m][i++]};tr()}
+function drawPhoto(im,t,day){const ar=im.width/im.height,sq=ar<1.25&&ar>.8;if(sq){sc.fillStyle='#000';sc.fillRect(0,0,SW,SH)}const kb=sq?Math.min(Math.max(SW/im.width,SH*.75/im.height),SH/im.height*1.15):Math.max(SW/im.width,SH/im.height),k=kb*(1.04+.03*Math.sin(t/18000)),w=im.width*k,h=im.height*k;
+ sc.drawImage(im,(SW-w)/2+Math.sin(t/23000)*SW*.025,(SH-h)/2+Math.cos(t/29000)*SH*.02,w,h);
+ const g=sc.createLinearGradient(0,0,0,SH);g.addColorStop(0,day?'rgba(0,30,80,.05)':'rgba(0,0,10,.15)');g.addColorStop(1,day?'rgba(0,20,60,.35)':'rgba(0,0,10,.55)');sc.fillStyle=g;sc.fillRect(0,0,SW,SH);
+ if(!day){for(let i=0;i<40;i++){const a=.3+.7*Math.abs(Math.sin(t/800+i*7.3)),x=(i*977%1000)/1000*SW,y=(i*613%1000)/1000*SH*.8;sc.fillStyle='#fff';sc.globalAlpha=a*.18;sc.beginPath();sc.arc(x,y,5,0,7);sc.fill();sc.globalAlpha=a;sc.beginPath();sc.arc(x,y,1.2,0,7);sc.fill()}sc.globalAlpha=1;
+  if(!SS&&Math.random()<.006)SS={x:SW*(.3+Math.random()*.7),y:SH*Math.random()*.35,l:0};
+  if(SS){SS.l++;const hx=SS.x-SS.l*12,hy=SS.y+SS.l*5,lg=sc.createLinearGradient(hx,hy,hx+60,hy-25);lg.addColorStop(0,'#fff');lg.addColorStop(1,'rgba(255,255,255,0)');sc.strokeStyle=lg;sc.lineWidth=2;sc.beginPath();sc.moveTo(hx,hy);sc.lineTo(hx+60,hy-25);sc.stroke();if(SS.l>45)SS=null}}}
+const CL=Array.from({length:7},()=>({x:Math.random()*2000,y:.08+Math.random()*.6,s:26+Math.random()*30,v:.012+Math.random()*.02}));
+function sat(x,y,k,ang,t){sc.save();sc.translate(x,y);sc.rotate(ang);sc.scale(k,k);
+ sc.strokeStyle='#cbd5e1';sc.lineWidth=1.6;sc.beginPath();sc.moveTo(-48,0);sc.lineTo(48,0);sc.stroke();
+ for(const d of[-1,1]){sc.save();sc.scale(d,1);const pg=sc.createLinearGradient(14,-10,48,10);pg.addColorStop(0,'#2563eb');pg.addColorStop(1,'#1e3a8a');sc.fillStyle=pg;sc.strokeStyle='#bfdbfe';sc.lineWidth=.7;
+  sc.fillRect(14,-10,34,20);sc.strokeRect(14,-10,34,20);for(let i=1;i<4;i++){sc.beginPath();sc.moveTo(14+i*8.5,-10);sc.lineTo(14+i*8.5,10);sc.stroke()}for(let i=1;i<3;i++){sc.beginPath();sc.moveTo(14,-10+i*6.7);sc.lineTo(48,-10+i*6.7);sc.stroke()}
+  sc.fillStyle='rgba(255,255,255,.18)';sc.fillRect(14,-10,34,6);sc.restore()}
+ const g=sc.createLinearGradient(-12,-13,12,13);g.addColorStop(0,'#fff1b8');g.addColorStop(.45,'#e0a93b');g.addColorStop(1,'#8a3d0c');sc.fillStyle=g;sc.fillRect(-12,-12,24,24);sc.strokeStyle='rgba(255,255,255,.6)';sc.lineWidth=.8;sc.strokeRect(-12,-12,24,24);
+ sc.fillStyle='rgba(0,0,0,.35)';sc.fillRect(-7,-4,14,8);sc.fillStyle='#e5e7eb';sc.beginPath();sc.ellipse(0,-18,10,4.5,0,0,7);sc.fill();sc.strokeStyle='#cbd5e1';sc.beginPath();sc.moveTo(0,-14);sc.lineTo(0,-12);sc.moveTo(0,12);sc.lineTo(0,21);sc.stroke();
+ const lc=Math.sin(t/260)>0?'#ff3b3b':'#2cff7a';sc.fillStyle=lc;sc.shadowColor=lc;sc.shadowBlur=10;sc.beginPath();sc.arc(0,21,2.2,0,7);sc.fill();sc.restore()}
+function sky(t){if($('auth').hidden||ES.hidden)return;requestAnimationFrame(sky);const day=SKY==='day';gr+=.0006;sc.clearRect(0,0,SW,SH);const ph=PH[day?'day':'night'];
+ if(ph){drawPhoto(ph,t,day)}else if(day){let g=sc.createLinearGradient(0,0,0,SH);g.addColorStop(0,'#1976d2');g.addColorStop(.55,'#64b5f6');g.addColorStop(1,'#e3f2fd');sc.fillStyle=g;sc.fillRect(0,0,SW,SH);
+  const sx=SW*.8,sy=SH*.17,k=Math.min(1.6,Math.max(1,SW/400));g=sc.createRadialGradient(sx,sy,0,sx,sy,SH*.42);g.addColorStop(0,'rgba(255,244,170,.95)');g.addColorStop(.25,'rgba(255,214,90,.45)');g.addColorStop(1,'rgba(255,200,60,0)');sc.fillStyle=g;sc.fillRect(0,0,SW,SH);
+  sc.save();sc.translate(sx,sy);sc.rotate(t/7000);sc.strokeStyle='rgba(255,236,150,.7)';sc.lineCap='round';for(let i=0;i<16;i++){sc.rotate(PI/8);sc.lineWidth=i%2?3:5;sc.beginPath();sc.moveTo(52*k,0);sc.lineTo((i%2?72:92)*k,0);sc.stroke()}sc.restore();
+  g=sc.createRadialGradient(sx,sy,0,sx,sy,40*k);g.addColorStop(0,'#fffde7');g.addColorStop(.7,'#ffd54f');g.addColorStop(1,'#ffb300');sc.fillStyle=g;sc.beginPath();sc.arc(sx,sy,40*k,0,7);sc.fill();
+  for(const c of CL){const x=((c.x+t*c.v)%(SW+360))-180,y=SH*c.y,r=c.s*k;sc.globalAlpha=.88;sc.fillStyle='#fff';sc.beginPath();for(const[dx,dy,m]of[[0,0,1],[.9,.15,.8],[-.9,.2,.7],[.3,-.5,.7]]){sc.moveTo(x+dx*r+r*m,y+dy*r);sc.arc(x+dx*r,y+dy*r,r*m,0,7)}sc.fill()}sc.globalAlpha=1}
+ else{const cx=SW/2,cy=SH*.38,M=Math.max(SW,SH)*.75;let g=sc.createRadialGradient(cx,cy,0,cx,cy,M*.6);g.addColorStop(0,'rgba(120,80,255,.25)');g.addColorStop(.5,'rgba(40,90,200,.10)');g.addColorStop(1,'rgba(0,0,0,0)');sc.fillStyle=g;sc.fillRect(0,0,SW,SH);
+  for(const s of ST){const a=s.a+gr*(1.2-s.r),x=cx+Math.cos(a)*s.r*M,y=cy+Math.sin(a)*s.r*M*.62,al=.4+.6*Math.abs(Math.sin(t/900+s.tw));sc.fillStyle=s.c;
+   sc.globalAlpha=al*.16;sc.beginPath();sc.arc(x,y,s.z*4.5,0,7);sc.fill();sc.globalAlpha=al*.3;sc.beginPath();sc.arc(x,y,s.z*2.2,0,7);sc.fill();sc.globalAlpha=al;sc.beginPath();sc.arc(x,y,s.z*1.1,0,7);sc.fill()}
+  sc.globalAlpha=1;if(!SS&&Math.random()<.006)SS={x:SW*(.3+Math.random()*.7),y:SH*Math.random()*.35,l:0};
+  if(SS){SS.l++;const hx=SS.x-SS.l*12,hy=SS.y+SS.l*5,lg=sc.createLinearGradient(hx,hy,hx+60,hy-25);lg.addColorStop(0,'#fff');lg.addColorStop(1,'rgba(255,255,255,0)');sc.strokeStyle=lg;sc.lineWidth=2;sc.beginPath();sc.moveTo(hx,hy);sc.lineTo(hx+60,hy-25);sc.stroke();if(SS.l>45)SS=null}}
+ if(FT&&t-FT<700){sc.globalAlpha=1-(t-FT)/700;sc.drawImage(snap,0,0);sc.globalAlpha=1}
+ const P=q=>[-120+q*(SW+240),SH*.17+Math.sin(q*6.28)*SH*.05],p=(t/36000)%1,[X,Y]=P(p);
+ for(let i=1;i<=16;i++){const[tx,ty]=P(p-i*.004);sc.globalAlpha=.5*(1-i/16);sc.fillStyle=day?'#fff':'#9fe8ff';sc.beginPath();sc.arc(tx,ty,2,0,7);sc.fill()}
+ sc.globalAlpha=1;sat(X,Y,Math.min(2.2,Math.max(1.5,SW/230)),Math.cos(p*6.28)*.25-.15,t)}
+requestAnimationFrame(sky);
+if(!LD())$('wvid').src='welcome.mp4';
+const T=['💬 Chat in your own language','🆘 One-tap SOS keeps you safe','🛍️ Sell to buyers across Africa','📉 Low data mode saves your money','📍 Share your live location with people you trust'];let ti=0;
+const tk=()=>{const e=$('tick');if(!e||$('auth').hidden)return;e.style.opacity=0;setTimeout(()=>{e.textContent=T[ti++%T.length];e.style.opacity=1},300)};tk();setInterval(tk,2800);
+const cv=$('gb'),c=cv.getContext('2d'),W=cv.width,R=W*.4,cx=W/2,cy=W/2,D=Math.ceil(R*2),N=D*D,PI=Math.PI;
+const lat=new Float32Array(N),lon0=new Float32Array(N),sh=new Float32Array(N),ok=new Uint8Array(N);
+for(let j=0;j<D;j++)for(let i=0;i<D;i++){const x=(i-R)/R,y=(R-j)/R,r2=x*x+y*y,k=j*D+i;if(r2<=1){const z=Math.sqrt(1-r2);ok[k]=1;lat[k]=Math.asin(y);lon0[k]=Math.atan2(x,z);sh[k]=Math.pow(z,.3)}}
+let tex=null,rot=0,TW=512,TH=256;window.GS=.004;
+if(!LD()){const U=['https://unpkg.com/three-globe/example/img/earth-night.jpg','https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg'];let n=0;
+ const ld=()=>{if(n>=U.length)return;const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{try{const t=document.createElement('canvas');t.width=TW;t.height=TH;const g=t.getContext('2d');g.drawImage(im,0,0,TW,TH);tex=g.getImageData(0,0,TW,TH).data}catch(e){}};im.onerror=ld;im.src=U[n++]};ld()}
+const CI=[[6.5,3.4],[9.07,7.4],[-1.29,36.8],[5.6,-.19],[30,31.2],[-26.2,28],[14.7,-17.4],[-1.95,30.06],[9,38.7],[-4.3,15.3],[51.5,-.12],[40.7,-74],[25.2,55.3],[12,8.5],[-33.9,18.4]];
+const V=(la,lo)=>{la*=PI/180;lo=lo*PI/180-rot;return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]};
+const sl=(a,b,t)=>{const d=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),w=Math.acos(d)||1e-4,s=Math.sin(w),p=Math.sin((1-t)*w)/s,q=Math.sin(t*w)/s;return[p*a[0]+q*b[0],p*a[1]+q*b[1],p*a[2]+q*b[2]]};
+const arcs=Array.from({length:4},()=>({a:0,b:1,t:Math.random(),sp:.004+Math.random()*.004}));const pick=a=>{a.a=CI.length*Math.random()|0;a.b=(a.a+1+(CI.length-1)*Math.random()|0)%CI.length;a.t=0};arcs.forEach(pick);
+const img=c.createImageData(D,D),o=img.data;let fr=0;
+function frame(){if($('auth').hidden)return;requestAnimationFrame(frame);fr++;rot+=window.GS;c.clearRect(0,0,W,W);
+ let g=c.createRadialGradient(cx,cy,R*.9,cx,cy,R*1.3);g.addColorStop(0,'rgba(0,240,255,.35)');g.addColorStop(1,'rgba(0,240,255,0)');c.fillStyle=g;c.fillRect(0,0,W,W);
+ if(tex){for(let k=0;k<N;k++){if(!ok[k])continue;let u=((lon0[k]+rot)/(2*PI)+.5)%1;if(u<0)u+=1;const t=(((.5-lat[k]/PI)*TH|0)*TW+(u*TW|0))*4,s=sh[k],a=k*4;
+  o[a]=Math.min(255,tex[t]*1.6*s+10);o[a+1]=Math.min(255,tex[t+1]*1.6*s+24);o[a+2]=Math.min(255,tex[t+2]*1.6*s+52);o[a+3]=255}c.putImageData(img,cx-R,cy-R)}
+ else{g=c.createRadialGradient(cx-R*.3,cy-R*.3,R*.1,cx,cy,R);g.addColorStop(0,'#1e5a9c');g.addColorStop(1,'#07142e');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R,0,7);c.fill();c.strokeStyle='rgba(56,189,248,.35)';c.lineWidth=1;
+  for(let m=0;m<6;m++){const rx=Math.abs(Math.cos(m*PI/6+rot))*R;c.beginPath();c.ellipse(cx,cy,Math.max(rx,.5),R,0,0,7);c.stroke()}for(let l=-60;l<=60;l+=30){const y=Math.sin(l*PI/180)*R,w=Math.cos(l*PI/180)*R;c.beginPath();c.ellipse(cx,cy-y,w,w*.12,0,0,7);c.stroke()}}
+ for(const a of arcs){a.t+=a.sp;if(a.t>=1)pick(a);const A=V(...CI[a.a]),B=V(...CI[a.b]);c.lineWidth=1.2;let prev=null;
+  for(let i=0;i<=24;i++){const t=i/24,v=sl(A,B,t),h=1+.28*Math.sin(PI*t),X=cx+R*h*v[0],Y=cy-R*h*v[1];if(v[2]>0&&prev){c.strokeStyle='rgba(0,240,255,.35)';c.beginPath();c.moveTo(prev[0],prev[1]);c.lineTo(X,Y);c.stroke()}prev=v[2]>0?[X,Y]:null}
+  const v=sl(A,B,a.t),h=1+.28*Math.sin(PI*a.t);if(v[2]>0){c.fillStyle='#fffc00';c.shadowColor='#fffc00';c.shadowBlur=10;c.beginPath();c.arc(cx+R*h*v[0],cy-R*h*v[1],2.6,0,7);c.fill();c.shadowBlur=0}}
+ CI.forEach((p,i)=>{const v=V(...p);if(v[2]<=.05)return;const X=cx+R*v[0],Y=cy-R*v[1],ph=((fr+i*13)%60)/60;c.strokeStyle=`rgba(255,252,0,${1-ph})`;c.beginPath();c.arc(X,Y,2+ph*9,0,7);c.stroke();c.fillStyle='#fff7a8';c.beginPath();c.arc(X,Y,2.2,0,7);c.fill()})}
+frame()})();
+start();
+</script></body></html>
